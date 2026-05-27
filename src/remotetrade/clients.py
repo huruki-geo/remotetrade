@@ -50,12 +50,13 @@ class PolymarketClient:
                 market = exact_by_slug.get(candidate_slug)
                 if market and _is_tradeable_price(market):
                     return market
-            for candidate_slug in candidate_slugs:
-                market = exact_by_slug.get(candidate_slug)
-                if market:
-                    return market
 
-        return max(parsed, key=lambda market: float(market.raw.get("volumeNum") or market.raw.get("volume") or 0))
+        tradeable = [market for market in parsed if _is_tradeable_price(market)]
+        if tradeable:
+            return max(tradeable, key=lambda market: float(market.raw.get("volumeNum") or market.raw.get("volume") or 0))
+
+        label = slug or query
+        raise RuntimeError(f"No tradeable Polymarket market found for {label!r}.")
 
     def search_markets(self, query: str, limit: int = 10) -> list[PredictionMarket]:
         markets = self._fetch_markets(slug=None, query=query)
@@ -242,7 +243,7 @@ def _candidate_slugs(query: str) -> list[str]:
 
 
 def _is_tradeable_price(market: PredictionMarket) -> bool:
-    return 0.02 < market.yes_price < 0.98 and 0.02 < market.no_price < 0.98
+    return 0.10 < market.yes_price < 0.90 and 0.10 < market.no_price < 0.90
 
 
 def _month_slug(value: datetime) -> str:
