@@ -42,7 +42,7 @@ jobs:
       - name: Run paper tick
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
-        run: python -m remotetrade.app --patterns patterns.json --discord --discord-events-only --duration-seconds 270
+        run: python -m remotetrade.app --patterns patterns.json --discord --discord-events-only --duration-seconds 210
 
       - name: Run stock event paper tick
         if: always()
@@ -56,3 +56,11 @@ jobs:
         with:
           path: data
           key: paper-state-${{ github.run_id }}
+
+      - name: Upload paper history
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: paper-history-${{ github.run_id }}
+          path: data
+          retention-days: 14

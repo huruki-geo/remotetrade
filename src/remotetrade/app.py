@@ -105,7 +105,8 @@ def maybe_send_discord(message: str, results: list[TickResult] | None = None, ev
         print("discord notification skipped: no trade event", flush=True)
         return
     try:
-        send_discord_message(message)
+        if send_discord_message(message):
+            print("discord notification sent", flush=True)
     except Exception as exc:
         print(f"discord notification failed: {exc}", flush=True)
 
