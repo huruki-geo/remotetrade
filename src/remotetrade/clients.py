@@ -43,6 +43,18 @@ class PolymarketClient:
             if exact:
                 return exact[0]
 
+        candidate_slugs = _candidate_slugs(query)
+        if candidate_slugs:
+            exact_by_slug = {market.slug: market for market in parsed}
+            for candidate_slug in candidate_slugs:
+                market = exact_by_slug.get(candidate_slug)
+                if market and _is_tradeable_price(market):
+                    return market
+            for candidate_slug in candidate_slugs:
+                market = exact_by_slug.get(candidate_slug)
+                if market:
+                    return market
+
         return max(parsed, key=lambda market: float(market.raw.get("volumeNum") or market.raw.get("volume") or 0))
 
     def search_markets(self, query: str, limit: int = 10) -> list[PredictionMarket]:
@@ -216,17 +228,21 @@ def _candidate_slugs(query: str) -> list[str]:
     if "5m" in normalized or "5-min" in normalized or "5 min" in normalized:
         minute = now.minute - (now.minute % 5)
         floor_5m = now.replace(minute=minute, second=0, microsecond=0)
-        for offset in (-1, 0, 1, 2):
+        for offset in (0, 1, -1, 2):
             start = floor_5m + timedelta(minutes=5 * offset)
             candidates.append(f"btc-updown-5m-{int(start.timestamp())}")
 
     floor_hour = now.replace(minute=0, second=0, microsecond=0)
-    for offset in (-1, 0, 1):
+    for offset in (0, 1, -1):
         start = floor_hour + timedelta(hours=offset)
         candidates.append(f"bitcoin-up-or-down-{_month_slug(start)}-{start.day}-{start.year}-{_et_hour_slug(start)}-et")
 
     candidates.append(f"bitcoin-up-or-down-on-{_month_slug(now)}-{now.day}-{now.year}")
     return list(dict.fromkeys(candidates))
+
+
+def _is_tradeable_price(market: PredictionMarket) -> bool:
+    return 0.02 < market.yes_price < 0.98 and 0.02 < market.no_price < 0.98
 
 
 def _month_slug(value: datetime) -> str:

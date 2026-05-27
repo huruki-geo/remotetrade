@@ -30,7 +30,7 @@ def run_once(
 ) -> TickResult:
     polymarket = polymarket or PolymarketClient(settings.gamma_url)
     coinbase = coinbase or CoinbaseClient(settings.coinbase_url)
-    broker = PaperBroker(settings.state_path, settings.trades_path, settings.start_cash_usd)
+    broker = PaperBroker(settings.state_path, settings.trades_path, settings.start_cash_usd, settings.ticks_path)
     strategy = PolymarketLeadStrategy(
         settings.entry_threshold,
         settings.strong_threshold,
@@ -74,6 +74,17 @@ def run_once(
         f"up={market.yes_price:.3f} odds_delta={delta_label} "
         f"position={position} realized_pnl={broker.state.realized_pnl:.2f} "
         f"unrealized_pnl={unrealized:.2f} unrealized_pct={unrealized_pct:+.3%}"
+    )
+    broker.append_tick(
+        pattern.id if pattern else "default",
+        market.slug,
+        settings.crypto_product_id,
+        spot_price,
+        market.yes_price,
+        odds_delta,
+        outcome,
+        unrealized,
+        unrealized_pct,
     )
     return TickResult(pattern.id if pattern else "default", line, outcome)
 

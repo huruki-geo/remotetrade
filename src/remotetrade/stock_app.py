@@ -39,7 +39,7 @@ def run_stock_once(
     polymarket: PolymarketClient,
     stocks: StooqClient,
 ) -> StockTickResult:
-    broker = PaperBroker(settings.state_path, settings.trades_path, settings.start_cash_usd)
+    broker = PaperBroker(settings.state_path, settings.trades_path, settings.start_cash_usd, settings.ticks_path)
     strategy = PolymarketLeadStrategy(
         settings.entry_threshold,
         settings.strong_threshold,
@@ -97,6 +97,17 @@ def run_stock_once(
         f"[{pattern.label}] {outcome}: signal={signal_label} target={target_side or '-'} {target_symbol or '-'} "
         f"position={position} price={current_price:.2f} realized_pnl={broker.state.realized_pnl:.2f} "
         f"unrealized_pnl={unrealized:.2f} unrealized_pct={unrealized_pct:+.3%}"
+    )
+    broker.append_tick(
+        pattern.id,
+        signal.market_slug if signal else "",
+        current_symbol or target_symbol or "",
+        current_price,
+        signal.yes_price if signal else 0.0,
+        signal.odds_delta if signal else None,
+        outcome,
+        unrealized,
+        unrealized_pct,
     )
     return StockTickResult(pattern.id, line, outcome)
 

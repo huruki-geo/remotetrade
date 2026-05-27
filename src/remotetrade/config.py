@@ -46,6 +46,7 @@ class Settings:
     start_cash_usd: float = 300.0
     state_path: Path = Path("data/paper_state.json")
     trades_path: Path = Path("data/trades.csv")
+    ticks_path: Path = Path("data/ticks.csv")
 
     @classmethod
     def from_env(cls) -> "Settings":
@@ -69,4 +70,5 @@ class Settings:
             start_cash_usd=env_float("START_CASH_USD", cls.start_cash_usd),
             state_path=Path(os.getenv("STATE_PATH", str(cls.state_path))),
             trades_path=Path(os.getenv("TRADES_PATH", str(cls.trades_path))),
+            ticks_path=Path(os.getenv("TICKS_PATH", str(cls.ticks_path))),
         )

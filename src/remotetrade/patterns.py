@@ -51,6 +51,7 @@ class Pattern:
             max_trade_size_usd=self.max_trade_size_usd,
             state_path=data_dir / f"{self.id}_state.json",
             trades_path=data_dir / f"{self.id}_trades.csv",
+            ticks_path=data_dir / f"{self.id}_ticks.csv",
         )
 
 

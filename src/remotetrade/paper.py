@@ -31,9 +31,10 @@ class PaperState:
 
 
 class PaperBroker:
-    def __init__(self, state_path: Path, trades_path: Path, start_cash: float) -> None:
+    def __init__(self, state_path: Path, trades_path: Path, start_cash: float, ticks_path: Path | None = None) -> None:
         self.state_path = state_path
         self.trades_path = trades_path
+        self.ticks_path = ticks_path
         self.state = self._load_state(start_cash)
 
     def open_position(
@@ -126,6 +127,63 @@ class PaperBroker:
         self.state_path.parent.mkdir(parents=True, exist_ok=True)
         payload = asdict(self.state)
         self.state_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+
+    def append_tick(
+        self,
+        pattern_id: str,
+        market_slug: str,
+        asset_id: str,
+        price: float,
+        signal_price: float,
+        odds_delta: float | None,
+        outcome: str,
+        unrealized_pnl: float,
+        unrealized_pct: float,
+    ) -> None:
+        if self.ticks_path is None:
+            return
+
+        self.ticks_path.parent.mkdir(parents=True, exist_ok=True)
+        exists = self.ticks_path.exists()
+        position = self.state.position
+        with self.ticks_path.open("a", newline="", encoding="utf-8") as handle:
+            writer = csv.DictWriter(
+                handle,
+                fieldnames=[
+                    "time",
+                    "pattern_id",
+                    "market_slug",
+                    "asset_id",
+                    "price",
+                    "signal_price",
+                    "odds_delta",
+                    "outcome",
+                    "position_side",
+                    "position_asset_id",
+                    "realized_pnl",
+                    "unrealized_pnl",
+                    "unrealized_pct",
+                ],
+            )
+            if not exists:
+                writer.writeheader()
+            writer.writerow(
+                {
+                    "time": utc_now(),
+                    "pattern_id": pattern_id,
+                    "market_slug": market_slug,
+                    "asset_id": asset_id,
+                    "price": f"{price:.6f}",
+                    "signal_price": f"{signal_price:.6f}",
+                    "odds_delta": "" if odds_delta is None else f"{odds_delta:.6f}",
+                    "outcome": outcome,
+                    "position_side": position.side if position else "",
+                    "position_asset_id": position.asset_id if position else "",
+                    "realized_pnl": f"{self.state.realized_pnl:.6f}",
+                    "unrealized_pnl": f"{unrealized_pnl:.6f}",
+                    "unrealized_pct": f"{unrealized_pct:.6f}",
+                }
+            )
 
     def _load_state(self, start_cash: float) -> PaperState:
         if not self.state_path.exists():
