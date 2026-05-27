@@ -1,0 +1,180 @@
+[
+  {
+    "id": "article_balanced",
+    "label": "Article Balanced",
+    "entry_threshold": 0.06,
+    "strong_threshold": 0.10,
+    "take_profit_pct": 0.07,
+    "stop_loss_pct": -0.03,
+    "hold_seconds": 259200,
+    "risk_fraction": 0.10,
+    "max_trade_size_usd": 30,
+    "categories": [
+      {
+        "id": "iran",
+        "label": "Iran / Oil / Airlines",
+        "query": "Iran ceasefire sanctions",
+        "up_long": ["AAL", "LUV"],
+        "up_short": ["OXY"],
+        "down_long": ["OXY"],
+        "down_short": ["AAL", "LUV"]
+      },
+      {
+        "id": "fed",
+        "label": "Fed Rate",
+        "query": "Fed rate cut 2026",
+        "market_slugs": ["will-1-fed-rate-cut-happen-in-2026"],
+        "up_long": ["ARKK"],
+        "up_short": ["BAC"],
+        "down_long": ["BAC"],
+        "down_short": ["ARKK"]
+      },
+      {
+        "id": "crypto_policy",
+        "label": "Crypto Policy",
+        "query": "crypto regulation bitcoin ETF SEC",
+        "up_long": ["COIN", "HOOD", "MSTR"],
+        "up_short": ["BITI"],
+        "down_long": ["BITI"],
+        "down_short": ["COIN", "HOOD", "MSTR"]
+      },
+      {
+        "id": "btc_proxy",
+        "label": "BTC Proxy Stocks",
+        "query": "Bitcoin above",
+        "up_long": ["MSTR", "MARA", "RIOT", "CLSK"],
+        "up_short": ["BITI"],
+        "down_long": ["BITI"],
+        "down_short": ["MSTR", "MARA", "RIOT", "CLSK"]
+      },
+      {
+        "id": "stablecoin_risk",
+        "label": "Stablecoin Risk",
+        "query": "Tether USDT stablecoin depeg",
+        "up_long": ["BITI"],
+        "up_short": ["COIN", "HOOD", "MSTR"],
+        "down_long": ["COIN", "HOOD", "MSTR"],
+        "down_short": ["BITI"]
+      }
+    ]
+  },
+  {
+    "id": "event_fast",
+    "label": "Event Fast",
+    "entry_threshold": 0.04,
+    "strong_threshold": 0.08,
+    "take_profit_pct": 0.025,
+    "stop_loss_pct": -0.015,
+    "hold_seconds": 86400,
+    "risk_fraction": 0.08,
+    "max_trade_size_usd": 25,
+    "categories": [
+      {
+        "id": "iran",
+        "label": "Iran / Oil / Airlines",
+        "query": "Iran ceasefire sanctions",
+        "up_long": ["AAL", "LUV"],
+        "up_short": ["OXY"],
+        "down_long": ["OXY"],
+        "down_short": ["AAL", "LUV"]
+      },
+      {
+        "id": "fed",
+        "label": "Fed Rate",
+        "query": "Fed rate cut 2026",
+        "market_slugs": ["will-1-fed-rate-cut-happen-in-2026"],
+        "up_long": ["ARKK"],
+        "up_short": ["BAC"],
+        "down_long": ["BAC"],
+        "down_short": ["ARKK"]
+      },
+      {
+        "id": "crypto_policy",
+        "label": "Crypto Policy",
+        "query": "crypto regulation bitcoin ETF SEC",
+        "up_long": ["COIN", "HOOD", "MSTR"],
+        "up_short": ["BITI"],
+        "down_long": ["BITI"],
+        "down_short": ["COIN", "HOOD", "MSTR"]
+      },
+      {
+        "id": "btc_proxy",
+        "label": "BTC Proxy Stocks",
+        "query": "Bitcoin above",
+        "up_long": ["MSTR", "MARA", "RIOT", "CLSK"],
+        "up_short": ["BITI"],
+        "down_long": ["BITI"],
+        "down_short": ["MSTR", "MARA", "RIOT", "CLSK"]
+      },
+      {
+        "id": "stablecoin_risk",
+        "label": "Stablecoin Risk",
+        "query": "Tether USDT stablecoin depeg",
+        "up_long": ["BITI"],
+        "up_short": ["COIN", "HOOD", "MSTR"],
+        "down_long": ["COIN", "HOOD", "MSTR"],
+        "down_short": ["BITI"]
+      }
+    ]
+  },
+  {
+    "id": "short_bias",
+    "label": "Short Bias",
+    "entry_threshold": 0.05,
+    "strong_threshold": 0.10,
+    "take_profit_pct": 0.04,
+    "stop_loss_pct": -0.02,
+    "hold_seconds": 172800,
+    "risk_fraction": 0.08,
+    "max_trade_size_usd": 25,
+    "prefer_short": true,
+    "categories": [
+      {
+        "id": "iran",
+        "label": "Iran / Oil / Airlines",
+        "query": "Iran ceasefire sanctions",
+        "up_long": ["AAL", "LUV"],
+        "up_short": ["OXY"],
+        "down_long": ["OXY"],
+        "down_short": ["AAL", "LUV"]
+      },
+      {
+        "id": "fed",
+        "label": "Fed Rate",
+        "query": "Fed rate cut 2026",
+        "market_slugs": ["will-1-fed-rate-cut-happen-in-2026"],
+        "up_long": ["ARKK"],
+        "up_short": ["BAC"],
+        "down_long": ["BAC"],
+        "down_short": ["ARKK"]
+      },
+      {
+        "id": "crypto_policy",
+        "label": "Crypto Policy",
+        "query": "crypto regulation bitcoin ETF SEC",
+        "up_long": ["COIN", "HOOD", "MSTR"],
+        "up_short": ["BITI"],
+        "down_long": ["BITI"],
+        "down_short": ["COIN", "HOOD", "MSTR"]
+      },
+      {
+        "id": "btc_proxy",
+        "label": "BTC Proxy Stocks",
+        "query": "Bitcoin above",
+        "up_long": ["MSTR", "MARA", "RIOT", "CLSK"],
+        "up_short": ["BITI"],
+        "down_long": ["BITI"],
+        "down_short": ["MSTR", "MARA", "RIOT", "CLSK"]
+      },
+      {
+        "id": "stablecoin_risk",
+        "label": "Stablecoin Risk",
+        "query": "Tether USDT stablecoin depeg",
+        "up_long": ["BITI"],
+        "up_short": ["COIN", "HOOD", "MSTR"],
+        "down_long": ["COIN", "HOOD", "MSTR"],
+        "down_short": ["BITI"]
+      }
+    ]
+  }
+]

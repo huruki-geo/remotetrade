@@ -50,6 +50,28 @@ data/strong_only_state.json
 data/strong_only_trades.csv
 ```
 
+## 株式イベント版
+
+記事に近い形で、Polymarket を「イベント期待の参考データ」として読み、関連株をペーパートレードするモードもあります。Polymarket では取引しません。
+
+```powershell
+python -m remotetrade.app --once --stock-patterns stock_patterns.json
+```
+
+`stock_patterns.json` では、イベントカテゴリごとにロング候補とショート候補を分けています。
+
+例:
+
+- イラン停戦期待上昇: `AAL` / `LUV` ロング、`OXY` ショート
+- イラン停戦期待低下: `OXY` ロング、`AAL` / `LUV` ショート
+- Fed 利下げ期待上昇: `ARKK` ロング、`BAC` ショート
+- Fed 利下げ期待低下: `BAC` ロング、`ARKK` ショート
+- 暗号政策/ETF期待上昇: `COIN` / `HOOD` / `MSTR` ロング、`BITI` ショート
+- BTC proxy期待上昇: `MSTR` / `MARA` / `RIOT` / `CLSK` ロング、`BITI` ショート
+- Stablecoinリスク上昇: `BITI` ロング、`COIN` / `HOOD` / `MSTR` ショート
+
+株価は鍵なしで動かしやすい Stooq の公開CSVから取得します。実運用判断ではなく検証用です。
+
 ## Discord通知
 
 `.env` または GitHub Actions secrets に `DISCORD_WEBHOOK_URL` を設定します。
@@ -66,7 +88,7 @@ python -m remotetrade.app --patterns patterns.json --discord --discord-events-on
 
 ## GitHub Actions
 
-[paper-trade.yml](.github/workflows/paper-trade.yml) は5分ごとに起動し、ジョブ内で約270秒間、`POLL_SECONDS=15` のペーパートレードを回します。
+[paper-trade.yml](.github/workflows/paper-trade.yml) は5分ごとに起動し、暗号資産版はジョブ内で約270秒間、`POLL_SECONDS=15` のペーパートレードを回します。株式イベント版は同じジョブで1 tickだけ評価します。
 
 使うには、GitHub の repository secrets に以下を追加してください。
 

@@ -34,6 +34,7 @@ class PolymarketLeadStrategyTest(unittest.TestCase):
     def test_closes_on_stop_loss_before_hold_expiry(self) -> None:
         position = Position(
             side="LONG",
+            asset_id="BTC-USD",
             qty=1.0,
             notional_usd=100.0,
             entry_price=100.0,

@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import json
+from csv import DictReader
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
+from io import StringIO
 from typing import Any
 
 import requests
@@ -43,29 +45,45 @@ class PolymarketClient:
 
         return max(parsed, key=lambda market: float(market.raw.get("volumeNum") or market.raw.get("volume") or 0))
 
-    def _fetch_markets(self, slug: str | None, query: str) -> list[dict[str, Any]]:
-        params: dict[str, Any] = {
-            "active": "true",
-            "closed": "false",
-            "limit": 100,
-        }
-        if slug:
-            params["slug"] = slug
-        elif query:
-            params["search"] = query
+    def search_markets(self, query: str, limit: int = 10) -> list[PredictionMarket]:
+        markets = self._fetch_markets(slug=None, query=query)
+        parsed = [market for item in markets if (market := self._parse_market(item))]
+        parsed.sort(key=lambda market: float(market.raw.get("volume24hr") or market.raw.get("volumeNum") or 0), reverse=True)
+        return parsed[:limit]
 
+    def _fetch_markets(self, slug: str | None, query: str) -> list[dict[str, Any]]:
+        if slug:
+            params = {"slug": slug}
+            params["slug"] = slug
+        else:
+            params = {"limit": 100}
+            params["active"] = "true"
+            params["closed"] = "false"
+            if query:
+                params["search"] = query
+
+        markets: list[dict[str, Any]] = []
         response = requests.get(f"{self.base_url}/markets", params=params, timeout=self.timeout)
-        response.raise_for_status()
-        payload = response.json()
-        markets = _extract_market_list(payload)
+        try:
+            response.raise_for_status()
+        except requests.HTTPError:
+            if slug:
+                raise
+        else:
+            payload = response.json()
+            markets = _extract_market_list(payload)
         if slug:
             return markets
 
         params.pop("search", None)
         params["q"] = query
         response = requests.get(f"{self.base_url}/markets", params=params, timeout=self.timeout)
-        response.raise_for_status()
-        markets.extend(_extract_market_list(response.json()))
+        try:
+            response.raise_for_status()
+        except requests.HTTPError:
+            pass
+        else:
+            markets.extend(_extract_market_list(response.json()))
 
         for candidate_slug in _candidate_slugs(query):
             candidate_params = {"active": "true", "closed": "false", "slug": candidate_slug}
@@ -130,6 +148,30 @@ class CoinbaseClient:
         response.raise_for_status()
         payload = response.json()
         return float(payload["price"])
+
+
+class StooqClient:
+    def __init__(self, base_url: str = "https://stooq.com", timeout: float = 10.0) -> None:
+        self.base_url = base_url.rstrip("/")
+        self.timeout = timeout
+
+    def get_price(self, symbol: str) -> float:
+        stooq_symbol = symbol.lower()
+        if "." not in stooq_symbol:
+            stooq_symbol = f"{stooq_symbol}.us"
+        response = requests.get(
+            f"{self.base_url}/q/l/",
+            params={"s": stooq_symbol, "f": "sd2t2ohlcv", "h": "", "e": "csv"},
+            timeout=self.timeout,
+        )
+        response.raise_for_status()
+        rows = list(DictReader(StringIO(response.text)))
+        if not rows:
+            raise RuntimeError(f"No Stooq price row for {symbol}.")
+        close = rows[0].get("Close")
+        if not close or close == "N/D":
+            raise RuntimeError(f"No Stooq close price for {symbol}.")
+        return float(close)
 
 
 def _jsonish_list(value: Any) -> list[Any]:

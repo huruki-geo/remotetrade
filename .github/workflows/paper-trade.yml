@@ -44,6 +44,12 @@ jobs:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         run: python -m remotetrade.app --patterns patterns.json --discord --discord-events-only --duration-seconds 270
 
+      - name: Run stock event paper tick
+        if: always()
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: python -m remotetrade.app --once --stock-patterns stock_patterns.json --discord --discord-events-only
+
       - name: Save paper state
         if: always()
         uses: actions/cache/save@v4

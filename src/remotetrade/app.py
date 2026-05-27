@@ -11,6 +11,7 @@ from remotetrade.config import Settings
 from remotetrade.notify import send_discord_message
 from remotetrade.paper import PaperBroker
 from remotetrade.patterns import Pattern, load_patterns
+from remotetrade.stock_app import run_stock_patterns_once
 from remotetrade.strategy import PolymarketLeadStrategy
 
 
@@ -55,6 +56,7 @@ def run_once(
                 price=spot_price,
                 market_slug=market.slug,
                 signal=odds_delta or 0.0,
+                asset_id=settings.crypto_product_id,
             )
     elif decision.action == "CLOSE":
         outcome = broker.close_position(spot_price, odds_delta or 0.0, decision.reason)
@@ -91,6 +93,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Run Polymarket-led crypto paper trading.")
     parser.add_argument("--once", action="store_true", help="Evaluate one tick and exit.")
     parser.add_argument("--patterns", type=Path, help="Run multiple paper-trading patterns from a JSON file.")
+    parser.add_argument("--stock-patterns", type=Path, help="Run stock paper-trading patterns from a JSON file.")
     parser.add_argument("--discord", action="store_true", help="Send tick results to DISCORD_WEBHOOK_URL.")
     parser.add_argument("--discord-events-only", action="store_true", help="Notify Discord only when a trade event occurs.")
     parser.add_argument("--duration-seconds", type=int, help="Run for this many seconds, then exit.")
@@ -103,6 +106,12 @@ def main() -> None:
             if args.patterns:
                 results = run_patterns_once(settings, args.patterns)
                 message = "Polymarket paper tick\n" + "\n".join(result.line for result in results)
+                print(message, flush=True)
+                if args.discord and (not args.discord_events_only or has_trade_event(results)):
+                    send_discord_message(message)
+            elif args.stock_patterns:
+                results = run_stock_patterns_once(settings, args.stock_patterns)
+                message = "Stock event paper tick\n" + "\n".join(result.line for result in results)
                 print(message, flush=True)
                 if args.discord and (not args.discord_events_only or has_trade_event(results)):
                     send_discord_message(message)

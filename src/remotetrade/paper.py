@@ -10,6 +10,7 @@ from pathlib import Path
 @dataclass
 class Position:
     side: str
+    asset_id: str
     qty: float
     notional_usd: float
     entry_price: float
@@ -26,6 +27,7 @@ class PaperState:
     last_market_slug: str | None = None
     last_market_price: float | None = None
     last_observed_at: str | None = None
+    observations: dict[str, float] | None = None
 
 
 class PaperBroker:
@@ -34,12 +36,21 @@ class PaperBroker:
         self.trades_path = trades_path
         self.state = self._load_state(start_cash)
 
-    def open_position(self, side: str, notional_usd: float, price: float, market_slug: str, signal: float) -> str:
+    def open_position(
+        self,
+        side: str,
+        notional_usd: float,
+        price: float,
+        market_slug: str,
+        signal: float,
+        asset_id: str,
+    ) -> str:
         if self.state.position is not None:
             return "hold_existing_position"
         qty = notional_usd / price
         self.state.position = Position(
             side=side,
+            asset_id=asset_id,
             qty=qty,
             notional_usd=notional_usd,
             entry_price=price,
@@ -47,7 +58,7 @@ class PaperBroker:
             market_slug=market_slug,
             entry_signal=signal,
         )
-        self._append_trade("OPEN", side, qty, price, 0.0, market_slug, signal)
+        self._append_trade("OPEN", side, qty, price, 0.0, market_slug, signal, asset_id=asset_id)
         self.save()
         return "opened"
 
@@ -60,18 +71,34 @@ class PaperBroker:
         self.state.cash += pnl
         self.state.realized_pnl += pnl
         self.state.position = None
-        self._append_trade("CLOSE", position.side, position.qty, price, pnl, position.market_slug, signal, reason)
+        self._append_trade(
+            "CLOSE",
+            position.side,
+            position.qty,
+            price,
+            pnl,
+            position.market_slug,
+            signal,
+            reason,
+            asset_id=position.asset_id,
+        )
         self.save()
         return "closed"
 
-    def record_observation(self, market_slug: str, market_price: float) -> float | None:
-        if self.state.last_market_slug != market_slug:
+    def record_observation(self, market_slug: str, market_price: float, observation_key: str | None = None) -> float | None:
+        key = observation_key or market_slug
+        observations = self.state.observations or {}
+        if key in observations:
+            delta = market_price - observations[key]
+        elif self.state.last_market_slug != market_slug:
             delta = None
         elif self.state.last_market_price is None:
             delta = None
         else:
             delta = market_price - self.state.last_market_price
 
+        observations[key] = market_price
+        self.state.observations = observations
         self.state.last_market_slug = market_slug
         self.state.last_market_price = market_price
         self.state.last_observed_at = utc_now()
@@ -105,6 +132,8 @@ class PaperBroker:
             return PaperState(cash=start_cash)
         payload = json.loads(self.state_path.read_text(encoding="utf-8"))
         position_payload = payload.get("position")
+        if position_payload and "asset_id" not in position_payload:
+            position_payload["asset_id"] = position_payload.get("market_slug", "UNKNOWN")
         position = Position(**position_payload) if position_payload else None
         return PaperState(
             cash=float(payload["cash"]),
@@ -113,6 +142,7 @@ class PaperBroker:
             last_market_slug=payload.get("last_market_slug"),
             last_market_price=payload.get("last_market_price"),
             last_observed_at=payload.get("last_observed_at"),
+            observations=payload.get("observations"),
         )
 
     def _append_trade(
@@ -125,13 +155,25 @@ class PaperBroker:
         market_slug: str,
         signal: float,
         reason: str = "",
+        asset_id: str = "",
     ) -> None:
         self.trades_path.parent.mkdir(parents=True, exist_ok=True)
         exists = self.trades_path.exists()
         with self.trades_path.open("a", newline="", encoding="utf-8") as handle:
             writer = csv.DictWriter(
                 handle,
-                fieldnames=["time", "action", "side", "qty", "price", "pnl", "market_slug", "signal", "reason"],
+                fieldnames=[
+                    "time",
+                    "action",
+                    "side",
+                    "asset_id",
+                    "qty",
+                    "price",
+                    "pnl",
+                    "market_slug",
+                    "signal",
+                    "reason",
+                ],
             )
             if not exists:
                 writer.writeheader()
@@ -140,6 +182,7 @@ class PaperBroker:
                     "time": utc_now(),
                     "action": action,
                     "side": side,
+                    "asset_id": asset_id,
                     "qty": f"{qty:.10f}",
                     "price": f"{price:.2f}",
                     "pnl": f"{pnl:.2f}",
