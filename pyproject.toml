@@ -1,0 +1,19 @@
+[project]
+name = "remotetrade"
+version = "0.1.0"
+description = "Paper trading experiments using Polymarket crypto prediction markets as short-horizon signals."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "requests>=2.32.0",
+]
+
+[project.scripts]
+remotetrade = "remotetrade.app:main"
+
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]

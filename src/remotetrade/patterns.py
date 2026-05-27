@@ -1,0 +1,61 @@
+from __future__ import annotations
+
+import json
+import re
+from dataclasses import dataclass, replace
+from pathlib import Path
+from typing import Any
+
+from remotetrade.config import Settings
+
+
+@dataclass(frozen=True)
+class Pattern:
+    id: str
+    label: str
+    entry_threshold: float
+    strong_threshold: float
+    take_profit_pct: float
+    stop_loss_pct: float
+    hold_seconds: int
+    risk_fraction: float
+    max_trade_size_usd: float
+
+    @classmethod
+    def from_dict(cls, payload: dict[str, Any]) -> "Pattern":
+        pattern_id = str(payload["id"])
+        if not re.fullmatch(r"[a-zA-Z0-9_-]+", pattern_id):
+            raise ValueError(f"Pattern id must be filesystem-safe: {pattern_id!r}")
+        return cls(
+            id=pattern_id,
+            label=str(payload.get("label") or pattern_id),
+            entry_threshold=float(payload["entry_threshold"]),
+            strong_threshold=float(payload["strong_threshold"]),
+            take_profit_pct=float(payload["take_profit_pct"]),
+            stop_loss_pct=float(payload["stop_loss_pct"]),
+            hold_seconds=int(payload["hold_seconds"]),
+            risk_fraction=float(payload["risk_fraction"]),
+            max_trade_size_usd=float(payload["max_trade_size_usd"]),
+        )
+
+    def apply(self, settings: Settings) -> Settings:
+        data_dir = settings.state_path.parent
+        return replace(
+            settings,
+            entry_threshold=self.entry_threshold,
+            strong_threshold=self.strong_threshold,
+            take_profit_pct=self.take_profit_pct,
+            stop_loss_pct=self.stop_loss_pct,
+            hold_seconds=self.hold_seconds,
+            risk_fraction=self.risk_fraction,
+            max_trade_size_usd=self.max_trade_size_usd,
+            state_path=data_dir / f"{self.id}_state.json",
+            trades_path=data_dir / f"{self.id}_trades.csv",
+        )
+
+
+def load_patterns(path: Path) -> list[Pattern]:
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(payload, list):
+        raise ValueError("patterns.json must contain a list of pattern objects.")
+    return [Pattern.from_dict(item) for item in payload]

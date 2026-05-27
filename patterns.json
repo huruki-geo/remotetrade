@@ -1,0 +1,35 @@
+[
+  {
+    "id": "scalp_fast",
+    "label": "Scalp Fast",
+    "entry_threshold": 0.04,
+    "strong_threshold": 0.08,
+    "take_profit_pct": 0.003,
+    "stop_loss_pct": -0.002,
+    "hold_seconds": 180,
+    "risk_fraction": 0.08,
+    "max_trade_size_usd": 25
+  },
+  {
+    "id": "balanced",
+    "label": "Balanced",
+    "entry_threshold": 0.06,
+    "strong_threshold": 0.10,
+    "take_profit_pct": 0.004,
+    "stop_loss_pct": -0.0025,
+    "hold_seconds": 300,
+    "risk_fraction": 0.10,
+    "max_trade_size_usd": 30
+  },
+  {
+    "id": "strong_only",
+    "label": "Strong Only",
+    "entry_threshold": 0.10,
+    "strong_threshold": 0.14,
+    "take_profit_pct": 0.006,
+    "stop_loss_pct": -0.003,
+    "hold_seconds": 300,
+    "risk_fraction": 0.10,
+    "max_trade_size_usd": 30
+  }
+]
