@@ -89,6 +89,16 @@ def has_trade_event(results: list[TickResult]) -> bool:
     return any(result.outcome in {"opened", "closed", "skip_size_too_small"} for result in results)
 
 
+def maybe_send_discord(message: str, results: list[TickResult] | None = None, events_only: bool = False) -> None:
+    if events_only and results is not None and not has_trade_event(results):
+        print("discord notification skipped: no trade event", flush=True)
+        return
+    try:
+        send_discord_message(message)
+    except Exception as exc:
+        print(f"discord notification failed: {exc}", flush=True)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Run Polymarket-led crypto paper trading.")
     parser.add_argument("--once", action="store_true", help="Evaluate one tick and exit.")
@@ -107,23 +117,23 @@ def main() -> None:
                 results = run_patterns_once(settings, args.patterns)
                 message = "Polymarket paper tick\n" + "\n".join(result.line for result in results)
                 print(message, flush=True)
-                if args.discord and (not args.discord_events_only or has_trade_event(results)):
-                    send_discord_message(message)
+                if args.discord:
+                    maybe_send_discord(message, results, args.discord_events_only)
             elif args.stock_patterns:
                 results = run_stock_patterns_once(settings, args.stock_patterns)
                 message = "Stock event paper tick\n" + "\n".join(result.line for result in results)
                 print(message, flush=True)
-                if args.discord and (not args.discord_events_only or has_trade_event(results)):
-                    send_discord_message(message)
+                if args.discord:
+                    maybe_send_discord(message, results, args.discord_events_only)
             else:
                 result = run_once(settings)
                 print(result.line, flush=True)
-                if args.discord and (not args.discord_events_only or has_trade_event([result])):
-                    send_discord_message("Polymarket paper tick\n" + result.line)
+                if args.discord:
+                    maybe_send_discord("Polymarket paper tick\n" + result.line, [result], args.discord_events_only)
         except Exception as exc:
             print(f"error: {exc}", flush=True)
             if args.discord:
-                send_discord_message(f"Polymarket paper tick error\n{exc}")
+                maybe_send_discord(f"Polymarket paper tick error\n{exc}")
 
         if args.once:
             break
