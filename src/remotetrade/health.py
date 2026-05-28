@@ -17,7 +17,7 @@ def build_health_report(data_dir: Path, max_tick_age_seconds: int, min_free_disk
     issues: list[str] = []
     lines = ["**RemoteTrade ヘルスチェック**"]
 
-    tick_files = sorted(data_dir.glob("limit_paper*_ticks.csv"))
+    tick_files = _limit_paper_tick_files(data_dir)
     if not tick_files:
         issues.append("limit_paper tickファイルがありません")
     for path in tick_files:
@@ -43,6 +43,12 @@ def build_health_report(data_dir: Path, max_tick_age_seconds: int, min_free_disk
 
     lines.insert(1, "- 状態: `正常`")
     return HealthReport(True, "\n".join(lines))
+
+
+def _limit_paper_tick_files(data_dir: Path) -> list[Path]:
+    tick_files = sorted(data_dir.glob("limit_paper*_ticks.csv"))
+    portfolio_files = [path for path in tick_files if path.name != "limit_paper_ticks.csv"]
+    return portfolio_files or tick_files
 
 
 def _latest_tick_time(path: Path) -> datetime | None:
