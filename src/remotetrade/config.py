@@ -49,7 +49,9 @@ class Settings:
     arbitrage_min_net_spread_pct: float = 0.001
     arbitrage_safety_bps: float = 5.0
     limit_maker_fee_bps: float = 10.0
+    limit_taker_fee_bps: float = 20.0
     limit_price_improvement_bps: float = 1.0
+    limit_order_ttl_ticks: int = 3
     wick_granularity_seconds: int = 60
     wick_min_ratio: float = 0.55
     wick_min_range_pct: float = 0.001
@@ -91,7 +93,9 @@ class Settings:
             ),
             arbitrage_safety_bps=env_float("ARBITRAGE_SAFETY_BPS", cls.arbitrage_safety_bps),
             limit_maker_fee_bps=env_float("LIMIT_MAKER_FEE_BPS", cls.limit_maker_fee_bps),
+            limit_taker_fee_bps=env_float("LIMIT_TAKER_FEE_BPS", cls.limit_taker_fee_bps),
             limit_price_improvement_bps=env_float("LIMIT_PRICE_IMPROVEMENT_BPS", cls.limit_price_improvement_bps),
+            limit_order_ttl_ticks=env_int("LIMIT_ORDER_TTL_TICKS", cls.limit_order_ttl_ticks),
             wick_granularity_seconds=env_int("WICK_GRANULARITY_SECONDS", cls.wick_granularity_seconds),
             wick_min_ratio=env_float("WICK_MIN_RATIO", cls.wick_min_ratio),
             wick_min_range_pct=env_float("WICK_MIN_RANGE_PCT", cls.wick_min_range_pct),

@@ -50,4 +50,5 @@ This repo should prefer small, testable edges over broad prediction.
    - partial-fill handling
    - hedge path for single-leg fills
 4. Add inventory checks. [initial version done]
-5. Add replay reports from saved tick CSVs.
+5. Add live paper fill tracking for post-only limit pairs. [done]
+6. Add replay reports from saved tick CSVs.

@@ -68,6 +68,12 @@ jobs:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         run: python -m remotetrade.app --once --depth-arbitrage --discord --discord-events-only
 
+      - name: Run limit paper tick
+        if: always()
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: python -m remotetrade.app --once --limit-paper --discord --discord-events-only
+
       - name: Run wick paper tick
         if: always()
         env:

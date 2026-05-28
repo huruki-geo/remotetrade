@@ -17,7 +17,8 @@ from remotetrade.arbitrage import (
 )
 from remotetrade.clients import Candle, CoinbaseClient, PolymarketClient
 from remotetrade.config import Settings
-from remotetrade.notify import send_discord_message
+from remotetrade.limit_paper import LimitPaperBroker, find_limit_candidate
+from remotetrade.notify import format_discord_error, format_discord_tick, send_discord_message
 from remotetrade.paper import PaperBroker
 from remotetrade.patterns import Pattern, load_patterns
 from remotetrade.profit_guard import best_depth_arbitrage
@@ -105,6 +106,51 @@ def run_depth_arbitrage_once(settings: Settings) -> TickResult:
         )
         return TickResult("depth_arbitrage", line, "none")
     return TickResult("depth_arbitrage", "[DepthArb] none: no_books", "none")
+
+
+def run_limit_paper_once(settings: Settings) -> TickResult:
+    data_dir = settings.state_path.parent
+    books = fetch_order_books(default_venues(settings.crypto_product_id))
+    broker = LimitPaperBroker(
+        data_dir / "limit_paper_state.json",
+        data_dir / "limit_paper_trades.csv",
+        data_dir / "limit_paper_ticks.csv",
+        data_dir / "orderbook_snapshots.jsonl",
+        settings.start_cash_usd,
+        settings.limit_maker_fee_bps,
+        settings.limit_taker_fee_bps,
+        settings.limit_order_ttl_ticks,
+    )
+    broker.append_snapshots(books)
+    fill_outcome, fill_pnl, fill_result = broker.evaluate_pending(books)
+    candidate = None
+    place_outcome = "no_candidate"
+    if broker.state.pending is None:
+        candidate = find_limit_candidate(
+            books,
+            settings.arbitrage_notional_usd,
+            settings.limit_maker_fee_bps,
+            settings.arbitrage_min_net_spread_pct,
+            settings.limit_price_improvement_bps,
+        )
+        if candidate:
+            place_outcome = broker.place_order(candidate)
+    broker.append_tick(place_outcome if fill_outcome == "no_pending" else fill_outcome, candidate, fill_pnl)
+
+    pending_label = "NONE"
+    if broker.state.pending:
+        pending_label = (
+            f"{broker.state.pending.buy_venue}@{broker.state.pending.buy_limit:.2f}/"
+            f"{broker.state.pending.sell_venue}@{broker.state.pending.sell_limit:.2f}"
+        )
+    fill_label = fill_result.outcome if fill_result else fill_outcome
+    line = (
+        f"[LimitPaper] {place_outcome if fill_outcome == 'no_pending' else fill_outcome}: "
+        f"fill={fill_label} pnl={fill_pnl:+.4f} realized_pnl={broker.state.realized_pnl:.4f} "
+        f"pending={pending_label} both={broker.state.both_filled} "
+        f"one_leg={broker.state.buy_only + broker.state.sell_only} expired={broker.state.expired}"
+    )
+    return TickResult("limit_paper", line, place_outcome if place_outcome != "no_candidate" else fill_outcome)
 
 
 def run_wick_once(settings: Settings, coinbase: CoinbaseClient | None = None) -> TickResult:
@@ -319,6 +365,13 @@ def maybe_send_discord(message: str, results: list[TickResult] | None = None, ev
         print(f"discord notification failed: {exc}", flush=True)
 
 
+def notify_tick(title: str, results: list[TickResult], enabled: bool, events_only: bool) -> None:
+    if not enabled:
+        return
+    message = format_discord_tick(title, [result.line for result in results])
+    maybe_send_discord(message, results, events_only)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Run Polymarket-led crypto paper trading.")
     parser.add_argument("--once", action="store_true", help="Evaluate one tick and exit.")
@@ -327,6 +380,7 @@ def main() -> None:
     parser.add_argument("--arbitrage", action="store_true", help="Scan exchange bid/ask spreads for paper arbitrage.")
     parser.add_argument("--limit-arbitrage", action="store_true", help="Quote post-only limit arbitrage candidates.")
     parser.add_argument("--depth-arbitrage", action="store_true", help="Scan depth-adjusted arbitrage opportunities.")
+    parser.add_argument("--limit-paper", action="store_true", help="Run post-only limit arbitrage paper fills.")
     parser.add_argument("--wick", action="store_true", help="Run candle-wick reversal paper trading.")
     parser.add_argument("--spread", action="store_true", help="Run cross-exchange spread mean-reversion paper trading.")
     parser.add_argument("--discord", action="store_true", help="Send tick results to DISCORD_WEBHOOK_URL.")
@@ -342,48 +396,44 @@ def main() -> None:
                 results = run_patterns_once(settings, args.patterns)
                 message = "Polymarket paper tick\n" + "\n".join(result.line for result in results)
                 print(message, flush=True)
-                if args.discord:
-                    maybe_send_discord(message, results, args.discord_events_only)
+                notify_tick("Polymarket Paper", results, args.discord, args.discord_events_only)
             elif args.stock_patterns:
                 results = run_stock_patterns_once(settings, args.stock_patterns)
                 message = "Stock event paper tick\n" + "\n".join(result.line for result in results)
                 print(message, flush=True)
-                if args.discord:
-                    maybe_send_discord(message, results, args.discord_events_only)
+                notify_tick("Stock Event Paper", results, args.discord, args.discord_events_only)
             elif args.arbitrage:
                 result = run_arbitrage_once(settings)
                 print(result.line, flush=True)
-                if args.discord:
-                    maybe_send_discord("Arbitrage paper tick\n" + result.line, [result], args.discord_events_only)
+                notify_tick("Arbitrage Paper", [result], args.discord, args.discord_events_only)
             elif args.limit_arbitrage:
                 result = run_limit_arbitrage_once(settings)
                 print(result.line, flush=True)
-                if args.discord:
-                    maybe_send_discord("Limit arbitrage paper tick\n" + result.line, [result], args.discord_events_only)
+                notify_tick("Limit Arbitrage Quote", [result], args.discord, args.discord_events_only)
             elif args.depth_arbitrage:
                 result = run_depth_arbitrage_once(settings)
                 print(result.line, flush=True)
-                if args.discord:
-                    maybe_send_discord("Depth arbitrage paper tick\n" + result.line, [result], args.discord_events_only)
+                notify_tick("Depth Arbitrage Guard", [result], args.discord, args.discord_events_only)
+            elif args.limit_paper:
+                result = run_limit_paper_once(settings)
+                print(result.line, flush=True)
+                notify_tick("Limit Paper Fill", [result], args.discord, args.discord_events_only)
             elif args.wick:
                 result = run_wick_once(settings)
                 print(result.line, flush=True)
-                if args.discord:
-                    maybe_send_discord("Wick paper tick\n" + result.line, [result], args.discord_events_only)
+                notify_tick("Wick Paper", [result], args.discord, args.discord_events_only)
             elif args.spread:
                 result = run_spread_once(settings)
                 print(result.line, flush=True)
-                if args.discord:
-                    maybe_send_discord("Spread paper tick\n" + result.line, [result], args.discord_events_only)
+                notify_tick("Spread Paper", [result], args.discord, args.discord_events_only)
             else:
                 result = run_once(settings)
                 print(result.line, flush=True)
-                if args.discord:
-                    maybe_send_discord("Polymarket paper tick\n" + result.line, [result], args.discord_events_only)
+                notify_tick("Polymarket Paper", [result], args.discord, args.discord_events_only)
         except Exception as exc:
             print(f"error: {exc}", flush=True)
             if args.discord:
-                maybe_send_discord(f"Polymarket paper tick error\n{exc}")
+                maybe_send_discord(format_discord_error("Paper Tick", exc))
 
         if args.once:
             break
