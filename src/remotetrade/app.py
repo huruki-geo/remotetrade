@@ -10,6 +10,7 @@ from remotetrade.arbitrage import (
     append_arbitrage_tick,
     append_limit_arbitrage_tick,
     default_venues,
+    fetch_order_books,
     fetch_quotes,
     scan_arbitrage,
     scan_limit_arbitrage,
@@ -19,6 +20,7 @@ from remotetrade.config import Settings
 from remotetrade.notify import send_discord_message
 from remotetrade.paper import PaperBroker
 from remotetrade.patterns import Pattern, load_patterns
+from remotetrade.profit_guard import best_depth_arbitrage
 from remotetrade.spread import SpreadPaperBroker, best_spread_snapshot, decide_spread, zscore
 from remotetrade.stock_app import run_stock_patterns_once
 from remotetrade.strategy import PolymarketLeadStrategy
@@ -77,6 +79,32 @@ def run_limit_arbitrage_once(settings: Settings) -> TickResult:
 
     quote_line = " ".join(f"{quote.venue} bid={quote.bid:.2f} ask={quote.ask:.2f}" for quote in quotes)
     return TickResult("limit_arbitrage", f"[LimitArb] none: {quote_line}", "none")
+
+
+def run_depth_arbitrage_once(settings: Settings) -> TickResult:
+    books = fetch_order_books(default_venues(settings.crypto_product_id))
+    best = best_depth_arbitrage(
+        books,
+        notional_usd=settings.arbitrage_notional_usd,
+        fee_bps=settings.arbitrage_fee_bps,
+        min_net_spread_pct=settings.arbitrage_min_net_spread_pct,
+        safety_bps=settings.arbitrage_safety_bps,
+    )
+    if best and best.allowed:
+        line = (
+            f"[DepthArb] opportunity: buy={best.buy_venue} avg={best.buy_avg_price:.2f} "
+            f"sell={best.sell_venue} avg={best.sell_avg_price:.2f} qty={best.qty:.10f} "
+            f"net_spread={best.net_spread_pct:+.3%} net_profit=${best.net_profit_usd:.2f}"
+        )
+        return TickResult("depth_arbitrage", line, "opportunity")
+
+    if best:
+        line = (
+            f"[DepthArb] none: best={best.buy_venue}->{best.sell_venue} "
+            f"net_spread={best.net_spread_pct:+.3%} reason={best.reason}"
+        )
+        return TickResult("depth_arbitrage", line, "none")
+    return TickResult("depth_arbitrage", "[DepthArb] none: no_books", "none")
 
 
 def run_wick_once(settings: Settings, coinbase: CoinbaseClient | None = None) -> TickResult:
@@ -298,6 +326,7 @@ def main() -> None:
     parser.add_argument("--stock-patterns", type=Path, help="Run stock paper-trading patterns from a JSON file.")
     parser.add_argument("--arbitrage", action="store_true", help="Scan exchange bid/ask spreads for paper arbitrage.")
     parser.add_argument("--limit-arbitrage", action="store_true", help="Quote post-only limit arbitrage candidates.")
+    parser.add_argument("--depth-arbitrage", action="store_true", help="Scan depth-adjusted arbitrage opportunities.")
     parser.add_argument("--wick", action="store_true", help="Run candle-wick reversal paper trading.")
     parser.add_argument("--spread", action="store_true", help="Run cross-exchange spread mean-reversion paper trading.")
     parser.add_argument("--discord", action="store_true", help="Send tick results to DISCORD_WEBHOOK_URL.")
@@ -331,6 +360,11 @@ def main() -> None:
                 print(result.line, flush=True)
                 if args.discord:
                     maybe_send_discord("Limit arbitrage paper tick\n" + result.line, [result], args.discord_events_only)
+            elif args.depth_arbitrage:
+                result = run_depth_arbitrage_once(settings)
+                print(result.line, flush=True)
+                if args.discord:
+                    maybe_send_discord("Depth arbitrage paper tick\n" + result.line, [result], args.discord_events_only)
             elif args.wick:
                 result = run_wick_once(settings)
                 print(result.line, flush=True)

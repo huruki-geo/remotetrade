@@ -6,11 +6,12 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Protocol
 
-from remotetrade.clients import BitstampClient, CoinbaseClient, KrakenClient, Quote
+from remotetrade.clients import BitstampClient, CoinbaseClient, KrakenClient, OrderBook, Quote
 
 
 class QuoteClient(Protocol):
     def get_quote(self, symbol: str) -> Quote: ...
+    def get_order_book(self, symbol: str) -> OrderBook: ...
 
 
 @dataclass(frozen=True)
@@ -146,6 +147,23 @@ def fetch_quotes(venues: list[VenueSpec]) -> list[Quote]:
             )
         )
     return quotes
+
+
+def fetch_order_books(venues: list[VenueSpec]) -> list[OrderBook]:
+    books: list[OrderBook] = []
+    for venue in venues:
+        book = venue.client.get_order_book(venue.symbol)
+        books.append(
+            OrderBook(
+                venue=venue.venue,
+                symbol=book.symbol,
+                bids=book.bids,
+                asks=book.asks,
+                raw=book.raw,
+                observed_at=book.observed_at,
+            )
+        )
+    return books
 
 
 def append_arbitrage_tick(path: Path, quotes: list[Quote], opportunities: list[ArbitrageOpportunity]) -> None:

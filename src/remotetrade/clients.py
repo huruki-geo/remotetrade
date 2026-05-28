@@ -24,6 +24,34 @@ class Quote:
 
 
 @dataclass(frozen=True)
+class OrderBookLevel:
+    price: float
+    qty: float
+
+    @property
+    def notional(self) -> float:
+        return self.price * self.qty
+
+
+@dataclass(frozen=True)
+class OrderBook:
+    venue: str
+    symbol: str
+    bids: list[OrderBookLevel]
+    asks: list[OrderBookLevel]
+    raw: dict[str, Any]
+    observed_at: str
+
+    @property
+    def best_bid(self) -> float:
+        return self.bids[0].price
+
+    @property
+    def best_ask(self) -> float:
+        return self.asks[0].price
+
+
+@dataclass(frozen=True)
 class Candle:
     time: datetime
     low: float
@@ -221,6 +249,23 @@ class CoinbaseClient:
         ]
         return sorted(candles, key=lambda candle: candle.time)
 
+    def get_order_book(self, product_id: str, level: int = 2) -> OrderBook:
+        response = requests.get(
+            f"{self.base_url}/products/{product_id}/book",
+            params={"level": level},
+            timeout=self.timeout,
+        )
+        response.raise_for_status()
+        payload = response.json()
+        return OrderBook(
+            venue="coinbase",
+            symbol=product_id,
+            bids=_book_levels(payload.get("bids") or [], reverse=True),
+            asks=_book_levels(payload.get("asks") or []),
+            raw=payload,
+            observed_at=utc_now(),
+        )
+
 
 class KrakenClient:
     def __init__(self, base_url: str = "https://api.kraken.com", timeout: float = 10.0) -> None:
@@ -245,6 +290,29 @@ class KrakenClient:
             raw=ticker,
         )
 
+    def get_order_book(self, pair: str, count: int = 50) -> OrderBook:
+        response = requests.get(
+            f"{self.base_url}/0/public/Depth",
+            params={"pair": pair, "count": count},
+            timeout=self.timeout,
+        )
+        response.raise_for_status()
+        payload = response.json()
+        if payload.get("error"):
+            raise RuntimeError(f"Kraken depth error: {payload['error']}")
+        result = payload.get("result") or {}
+        if not result:
+            raise RuntimeError(f"No Kraken depth result for {pair}.")
+        book = next(iter(result.values()))
+        return OrderBook(
+            venue="kraken",
+            symbol=pair,
+            bids=_book_levels(book.get("bids") or [], reverse=True),
+            asks=_book_levels(book.get("asks") or []),
+            raw=book,
+            observed_at=utc_now(),
+        )
+
 
 class BitstampClient:
     def __init__(self, base_url: str = "https://www.bitstamp.net", timeout: float = 10.0) -> None:
@@ -261,6 +329,22 @@ class BitstampClient:
             bid=float(payload["bid"]),
             ask=float(payload["ask"]),
             raw=payload,
+        )
+
+    def get_order_book(self, currency_pair: str) -> OrderBook:
+        response = requests.get(
+            f"{self.base_url}/api/v2/order_book/{currency_pair.lower()}/",
+            timeout=self.timeout,
+        )
+        response.raise_for_status()
+        payload = response.json()
+        return OrderBook(
+            venue="bitstamp",
+            symbol=currency_pair.upper(),
+            bids=_book_levels(payload.get("bids") or [], reverse=True),
+            asks=_book_levels(payload.get("asks") or []),
+            raw=payload,
+            observed_at=utc_now(),
         )
 
 
@@ -298,6 +382,16 @@ def _jsonish_list(value: Any) -> list[Any]:
             return []
         return parsed if isinstance(parsed, list) else []
     return []
+
+
+def _book_levels(rows: list[Any], reverse: bool = False) -> list[OrderBookLevel]:
+    levels = [OrderBookLevel(price=float(row[0]), qty=float(row[1])) for row in rows]
+    valid = [level for level in levels if level.price > 0 and level.qty > 0]
+    return sorted(valid, key=lambda level: level.price, reverse=reverse)
+
+
+def utc_now() -> str:
+    return datetime.now(UTC).isoformat(timespec="seconds")
 
 
 def _matches_query(market: PredictionMarket, query: str) -> bool:

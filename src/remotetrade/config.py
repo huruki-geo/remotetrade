@@ -47,6 +47,7 @@ class Settings:
     arbitrage_notional_usd: float = 100.0
     arbitrage_fee_bps: float = 20.0
     arbitrage_min_net_spread_pct: float = 0.001
+    arbitrage_safety_bps: float = 5.0
     limit_maker_fee_bps: float = 10.0
     limit_price_improvement_bps: float = 1.0
     wick_granularity_seconds: int = 60
@@ -88,6 +89,7 @@ class Settings:
                 "ARBITRAGE_MIN_NET_SPREAD_PCT",
                 cls.arbitrage_min_net_spread_pct,
             ),
+            arbitrage_safety_bps=env_float("ARBITRAGE_SAFETY_BPS", cls.arbitrage_safety_bps),
             limit_maker_fee_bps=env_float("LIMIT_MAKER_FEE_BPS", cls.limit_maker_fee_bps),
             limit_price_improvement_bps=env_float("LIMIT_PRICE_IMPROVEMENT_BPS", cls.limit_price_improvement_bps),
             wick_granularity_seconds=env_int("WICK_GRANULARITY_SECONDS", cls.wick_granularity_seconds),

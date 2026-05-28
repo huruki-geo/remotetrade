@@ -43,10 +43,11 @@ This repo should prefer small, testable edges over broad prediction.
 
 ## Next Implementation Priority
 
-1. Add order book clients for the exchanges.
-2. Add a `profit_guard` module that computes effective bid/ask for target notional.
-3. Add a limit-order fill simulator:
+1. Add order book clients for the exchanges. [done]
+2. Add a `profit_guard` module that computes effective bid/ask for target notional. [done]
+3. Add a limit-order fill simulator. [initial version done]
    - maker fill probability proxy
    - partial-fill handling
    - hedge path for single-leg fills
-4. Add replay reports from saved tick CSVs.
+4. Add inventory checks. [initial version done]
+5. Add replay reports from saved tick CSVs.
