@@ -6,7 +6,7 @@ from pathlib import Path
 
 from remotetrade.arbitrage import LimitArbitrageOrder
 from remotetrade.clients import OrderBook, OrderBookLevel
-from remotetrade.limit_paper import LimitPaperBroker, find_limit_candidate
+from remotetrade.limit_paper import LimitPaperBroker, LimitPaperState, adapt_limit_parameters, find_limit_candidate
 
 
 class LimitPaperTest(unittest.TestCase):
@@ -92,6 +92,72 @@ class LimitPaperTest(unittest.TestCase):
         self.assertIsNotNone(candidate)
         self.assertEqual(candidate.buy_venue, "coinbase")
         self.assertEqual(candidate.sell_venue, "kraken")
+
+    def test_rejects_candidate_when_emergency_hedge_would_slip_too_much(self) -> None:
+        candidate = find_limit_candidate(
+            [
+                OrderBook(
+                    "coinbase",
+                    "BTC-USD",
+                    bids=[OrderBookLevel(100.0, 10.0)],
+                    asks=[OrderBookLevel(101.0, 10.0)],
+                    raw={},
+                    observed_at="now",
+                ),
+                OrderBook(
+                    "kraken",
+                    "XBTUSD",
+                    bids=[OrderBookLevel(103.0, 10.0)],
+                    asks=[OrderBookLevel(104.0, 10.0)],
+                    raw={},
+                    observed_at="now",
+                ),
+            ],
+            notional_usd=1000.0,
+            maker_fee_bps=5.0,
+            min_net_spread_pct=0.0,
+            price_improvement_bps=1.0,
+            max_hedge_slippage_bps=25.0,
+        )
+
+        self.assertIsNone(candidate)
+
+    def test_adaptive_tuning_turns_defensive_after_one_leg_fills(self) -> None:
+        tuning = adapt_limit_parameters(
+            LimitPaperState(cash=300.0, both_filled=6, buy_only=2, sell_only=1, expired=0),
+            min_net_spread_pct=0.001,
+            price_improvement_bps=1.0,
+            max_hedge_slippage_bps=25.0,
+        )
+
+        self.assertEqual(tuning.mode, "defensive")
+        self.assertGreater(tuning.min_net_spread_pct, 0.001)
+        self.assertLess(tuning.price_improvement_bps, 1.0)
+        self.assertLess(tuning.max_hedge_slippage_bps, 25.0)
+
+    def test_adaptive_tuning_gets_more_aggressive_after_expirations(self) -> None:
+        tuning = adapt_limit_parameters(
+            LimitPaperState(cash=300.0, both_filled=1, buy_only=0, sell_only=0, expired=8),
+            min_net_spread_pct=0.001,
+            price_improvement_bps=1.0,
+            max_hedge_slippage_bps=25.0,
+        )
+
+        self.assertEqual(tuning.mode, "patient_aggressive")
+        self.assertLess(tuning.min_net_spread_pct, 0.001)
+        self.assertGreater(tuning.price_improvement_bps, 1.0)
+
+    def test_adaptive_tuning_stays_base_until_enough_signal(self) -> None:
+        tuning = adapt_limit_parameters(
+            LimitPaperState(cash=300.0, both_filled=1, buy_only=1, sell_only=0, expired=1),
+            min_net_spread_pct=0.001,
+            price_improvement_bps=1.0,
+            max_hedge_slippage_bps=25.0,
+        )
+
+        self.assertEqual(tuning.mode, "base")
+        self.assertEqual(tuning.min_net_spread_pct, 0.001)
+        self.assertEqual(tuning.price_improvement_bps, 1.0)
 
 
 if __name__ == "__main__":

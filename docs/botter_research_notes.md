@@ -41,6 +41,20 @@ This repo should prefer small, testable edges over broad prediction.
    - A signal is not enough.
    - A trade is allowed only if a profit guard says fees, spread, depth, latency, and inventory constraints are acceptable.
 
+## Working Takeaways
+
+- Do not try to win by broad prediction first. Survive by making execution quality measurable.
+- Paper profit is not trusted unless it accounts for both-leg fills, one-leg fills, expirations, hedge cost, stale quotes, and fees.
+- Limit/arbitrage style rules need order-book replay, not only OHLCV backtests.
+- A bot should adapt conservatively: tighten when one-leg fills rise, only get more aggressive when fills are stable or orders expire without adverse fills.
+- ML remains a later analysis layer. Add it only after labels, replay tests, execution-cost modeling, and out-of-sample checks exist.
+
+## Current Direction
+
+- Keep `profit_guard`, limit fill simulation, hedge-slippage filtering, and adaptive limit tuning as the core safety layer.
+- Next useful build: replay reports from saved `orderbook_snapshots*.jsonl` so variants can be compared under the same market sequence.
+- After replay exists, add entry gates for order-book imbalance, spread width, quote age, and last-trade aggressor direction.
+
 ## Next Implementation Priority
 
 1. Add order book clients for the exchanges. [done]

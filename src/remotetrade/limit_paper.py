@@ -9,6 +9,7 @@ from pathlib import Path
 from remotetrade.arbitrage import LimitArbitrageOrder, scan_limit_arbitrage
 from remotetrade.clients import OrderBook, Quote
 from remotetrade.fill_simulator import LimitFillResult, simulate_limit_pair_fill
+from remotetrade.profit_guard import effective_buy, effective_sell
 
 
 @dataclass
@@ -47,6 +48,14 @@ class LimitPaperState:
     buy_only: int = 0
     sell_only: int = 0
     expired: int = 0
+
+
+@dataclass(frozen=True)
+class LimitPaperTuning:
+    min_net_spread_pct: float
+    price_improvement_bps: float
+    max_hedge_slippage_bps: float
+    mode: str
 
 
 class LimitPaperBroker:
@@ -263,6 +272,7 @@ def find_limit_candidate(
     maker_fee_bps: float,
     min_net_spread_pct: float,
     price_improvement_bps: float,
+    max_hedge_slippage_bps: float | None = None,
 ) -> LimitArbitrageOrder | None:
     orders = scan_limit_arbitrage(
         quote_from_books(books),
@@ -271,7 +281,84 @@ def find_limit_candidate(
         min_net_spread_pct,
         price_improvement_bps,
     )
-    return orders[0] if orders else None
+    if max_hedge_slippage_bps is None:
+        return orders[0] if orders else None
+
+    by_venue = {book.venue: book for book in books}
+    scored: list[tuple[float, LimitArbitrageOrder]] = []
+    for order in orders:
+        buy_book = by_venue.get(order.buy_venue)
+        sell_book = by_venue.get(order.sell_venue)
+        if buy_book is None or sell_book is None:
+            continue
+        hedge_slippage_pct = _worst_hedge_slippage_pct(order, buy_book, sell_book)
+        if hedge_slippage_pct * 10_000 > max_hedge_slippage_bps:
+            continue
+        scored.append((order.net_spread_pct - hedge_slippage_pct, order))
+
+    if not scored:
+        return None
+    return max(scored, key=lambda item: item[0])[1]
+
+
+def adapt_limit_parameters(
+    state: LimitPaperState,
+    min_net_spread_pct: float,
+    price_improvement_bps: float,
+    max_hedge_slippage_bps: float,
+) -> LimitPaperTuning:
+    both = state.both_filled
+    one_leg = state.buy_only + state.sell_only
+    expired = state.expired
+    fills = both + one_leg
+    outcomes = fills + expired
+
+    if fills >= 5 and one_leg / fills >= 0.25:
+        return LimitPaperTuning(
+            min_net_spread_pct=min_net_spread_pct * 1.5,
+            price_improvement_bps=max(0.1, price_improvement_bps * 0.5),
+            max_hedge_slippage_bps=max(5.0, max_hedge_slippage_bps * 0.6),
+            mode="defensive",
+        )
+
+    if outcomes >= 8 and expired / outcomes >= 0.70 and one_leg == 0:
+        return LimitPaperTuning(
+            min_net_spread_pct=max(0.0, min_net_spread_pct * 0.9),
+            price_improvement_bps=min(5.0, price_improvement_bps * 1.5),
+            max_hedge_slippage_bps=max_hedge_slippage_bps,
+            mode="patient_aggressive",
+        )
+
+    if both >= 5 and one_leg == 0 and (outcomes == 0 or expired / outcomes <= 0.30):
+        return LimitPaperTuning(
+            min_net_spread_pct=max(0.0, min_net_spread_pct * 0.95),
+            price_improvement_bps=min(5.0, price_improvement_bps * 1.2),
+            max_hedge_slippage_bps=max_hedge_slippage_bps,
+            mode="stable_aggressive",
+        )
+
+    return LimitPaperTuning(
+        min_net_spread_pct=min_net_spread_pct,
+        price_improvement_bps=price_improvement_bps,
+        max_hedge_slippage_bps=max_hedge_slippage_bps,
+        mode="base",
+    )
+
+
+def _worst_hedge_slippage_pct(order: LimitArbitrageOrder, buy_book: OrderBook, sell_book: OrderBook) -> float:
+    buy_hedge = effective_buy(buy_book.asks, order.notional_usd)
+    if not buy_hedge.complete:
+        return float("inf")
+
+    sell_hedge = effective_sell(sell_book.bids, order.qty)
+    if not sell_hedge.complete:
+        return float("inf")
+
+    expected_buy_cost = order.buy_limit * order.qty
+    expected_sell_proceeds = order.sell_limit * order.qty
+    buy_slippage = max(0.0, buy_hedge.notional - expected_buy_cost) / order.notional_usd
+    sell_slippage = max(0.0, expected_sell_proceeds - sell_hedge.notional) / order.notional_usd
+    return max(buy_slippage, sell_slippage)
 
 
 def utc_now() -> str:

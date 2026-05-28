@@ -18,7 +18,7 @@ from remotetrade.arbitrage import (
 from remotetrade.clients import Candle, CoinbaseClient, PolymarketClient
 from remotetrade.config import Settings
 from remotetrade.health import build_health_report
-from remotetrade.limit_paper import LimitPaperBroker, find_limit_candidate
+from remotetrade.limit_paper import LimitPaperBroker, adapt_limit_parameters, find_limit_candidate
 from remotetrade.notify import format_discord_error, format_discord_tick, send_discord_message
 from remotetrade.paper import PaperBroker
 from remotetrade.patterns import Pattern, load_patterns
@@ -145,6 +145,12 @@ def run_limit_paper_for(
     )
     broker.append_snapshots(books)
     fill_outcome, fill_pnl, fill_result = broker.evaluate_pending(books)
+    tuning = adapt_limit_parameters(
+        broker.state,
+        variant.min_net_spread_pct,
+        variant.price_improvement_bps,
+        settings.limit_max_hedge_slippage_bps,
+    )
     candidate = None
     place_outcome = "no_candidate"
     if broker.state.pending is None:
@@ -152,8 +158,9 @@ def run_limit_paper_for(
             books,
             settings.arbitrage_notional_usd,
             settings.limit_maker_fee_bps,
-            variant.min_net_spread_pct,
-            variant.price_improvement_bps,
+            tuning.min_net_spread_pct,
+            tuning.price_improvement_bps,
+            tuning.max_hedge_slippage_bps,
         )
         if candidate:
             place_outcome = broker.place_order(candidate)
@@ -170,7 +177,9 @@ def run_limit_paper_for(
         f"[LimitPaper {product_id} {variant.id}] {place_outcome if fill_outcome == 'no_pending' else fill_outcome}: "
         f"fill={fill_label} pnl={fill_pnl:+.4f} realized_pnl={broker.state.realized_pnl:.4f} "
         f"pending={pending_label} both={broker.state.both_filled} "
-        f"one_leg={broker.state.buy_only + broker.state.sell_only} expired={broker.state.expired}"
+        f"one_leg={broker.state.buy_only + broker.state.sell_only} expired={broker.state.expired} "
+        f"tune={tuning.mode} min_net={tuning.min_net_spread_pct:.4%} "
+        f"improve={tuning.price_improvement_bps:.2f}bps hedge_slip={tuning.max_hedge_slippage_bps:.1f}bps"
     )
     return TickResult(f"limit_paper_{product_id}_{variant.id}", line, place_outcome if place_outcome != "no_candidate" else fill_outcome)
 

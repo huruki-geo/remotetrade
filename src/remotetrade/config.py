@@ -53,6 +53,7 @@ class Settings:
     limit_taker_fee_bps: float = 20.0
     limit_price_improvement_bps: float = 1.0
     limit_order_ttl_ticks: int = 3
+    limit_max_hedge_slippage_bps: float = 25.0
     limit_paper_variants: str = "normal:0.001:1.0,loose:0.0005:1.0,strict:0.002:1.0"
     wick_granularity_seconds: int = 60
     wick_min_ratio: float = 0.55
@@ -101,6 +102,10 @@ class Settings:
             limit_taker_fee_bps=env_float("LIMIT_TAKER_FEE_BPS", cls.limit_taker_fee_bps),
             limit_price_improvement_bps=env_float("LIMIT_PRICE_IMPROVEMENT_BPS", cls.limit_price_improvement_bps),
             limit_order_ttl_ticks=env_int("LIMIT_ORDER_TTL_TICKS", cls.limit_order_ttl_ticks),
+            limit_max_hedge_slippage_bps=env_float(
+                "LIMIT_MAX_HEDGE_SLIPPAGE_BPS",
+                cls.limit_max_hedge_slippage_bps,
+            ),
             limit_paper_variants=os.getenv("LIMIT_PAPER_VARIANTS", cls.limit_paper_variants),
             wick_granularity_seconds=env_int("WICK_GRANULARITY_SECONDS", cls.wick_granularity_seconds),
             wick_min_ratio=env_float("WICK_MIN_RATIO", cls.wick_min_ratio),
