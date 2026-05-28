@@ -20,6 +20,16 @@ class NotifyTest(unittest.TestCase):
         self.assertIn("今回損益: `+1.2300`", message)
         self.assertIn("実現損益: `2.3400`", message)
 
+    def test_translates_common_field_values(self) -> None:
+        message = format_discord_tick(
+            "指値裁定紙トレード",
+            ["[LimitPaper] no_candidate: fill=no_pending pnl=+0.0000 realized_pnl=0.0000 pending=NONE"],
+        )
+
+        self.assertIn("**待機 指値裁定紙トレード**", message)
+        self.assertIn("待機中の指値: `なし`", message)
+        self.assertIn("約定判定: `未発注`", message)
+
     def test_formats_error(self) -> None:
         message = format_discord_error("Paper Tick", "boom")
 

@@ -110,5 +110,22 @@ def _interesting_fields(fields: dict[str, str]) -> list[str]:
     lines = []
     for key, label in labels:
         if key in fields:
-            lines.append(f"{label}: `{fields[key]}`")
+            lines.append(f"{label}: `{_ja_value(fields[key])}`")
     return lines[:6]
+
+
+def _ja_value(value: str) -> str:
+    return {
+        "NONE": "なし",
+        "none": "なし",
+        "no_pending": "未発注",
+        "both_filled": "両足約定",
+        "buy_only": "買いだけ約定",
+        "sell_only": "売りだけ約定",
+        "neither_limit_crossed": "どちらも未約定",
+        "both_limits_crossed": "両方の指値に到達",
+        "sell_leg_missed": "売り足未約定",
+        "buy_leg_missed": "買い足未約定",
+        "net_spread_below_threshold": "純スプレッド不足",
+        "allowed": "許可",
+    }.get(value, value)
