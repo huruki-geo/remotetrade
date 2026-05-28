@@ -396,44 +396,44 @@ def main() -> None:
                 results = run_patterns_once(settings, args.patterns)
                 message = "Polymarket paper tick\n" + "\n".join(result.line for result in results)
                 print(message, flush=True)
-                notify_tick("Polymarket Paper", results, args.discord, args.discord_events_only)
+                notify_tick("Polymarket紙トレード", results, args.discord, args.discord_events_only)
             elif args.stock_patterns:
                 results = run_stock_patterns_once(settings, args.stock_patterns)
                 message = "Stock event paper tick\n" + "\n".join(result.line for result in results)
                 print(message, flush=True)
-                notify_tick("Stock Event Paper", results, args.discord, args.discord_events_only)
+                notify_tick("株式イベント紙トレード", results, args.discord, args.discord_events_only)
             elif args.arbitrage:
                 result = run_arbitrage_once(settings)
                 print(result.line, flush=True)
-                notify_tick("Arbitrage Paper", [result], args.discord, args.discord_events_only)
+                notify_tick("裁定チェック", [result], args.discord, args.discord_events_only)
             elif args.limit_arbitrage:
                 result = run_limit_arbitrage_once(settings)
                 print(result.line, flush=True)
-                notify_tick("Limit Arbitrage Quote", [result], args.discord, args.discord_events_only)
+                notify_tick("指値裁定候補", [result], args.discord, args.discord_events_only)
             elif args.depth_arbitrage:
                 result = run_depth_arbitrage_once(settings)
                 print(result.line, flush=True)
-                notify_tick("Depth Arbitrage Guard", [result], args.discord, args.discord_events_only)
+                notify_tick("板厚込み裁定チェック", [result], args.discord, args.discord_events_only)
             elif args.limit_paper:
                 result = run_limit_paper_once(settings)
                 print(result.line, flush=True)
-                notify_tick("Limit Paper Fill", [result], args.discord, args.discord_events_only)
+                notify_tick("指値裁定紙トレード", [result], args.discord, args.discord_events_only)
             elif args.wick:
                 result = run_wick_once(settings)
                 print(result.line, flush=True)
-                notify_tick("Wick Paper", [result], args.discord, args.discord_events_only)
+                notify_tick("ひげ取り紙トレード", [result], args.discord, args.discord_events_only)
             elif args.spread:
                 result = run_spread_once(settings)
                 print(result.line, flush=True)
-                notify_tick("Spread Paper", [result], args.discord, args.discord_events_only)
+                notify_tick("スプレッド紙トレード", [result], args.discord, args.discord_events_only)
             else:
                 result = run_once(settings)
                 print(result.line, flush=True)
-                notify_tick("Polymarket Paper", [result], args.discord, args.discord_events_only)
+                notify_tick("Polymarket紙トレード", [result], args.discord, args.discord_events_only)
         except Exception as exc:
             print(f"error: {exc}", flush=True)
             if args.discord:
-                maybe_send_discord(format_discord_error("Paper Tick", exc))
+                maybe_send_discord(format_discord_error("紙トレードtick", exc))
 
         if args.once:
             break

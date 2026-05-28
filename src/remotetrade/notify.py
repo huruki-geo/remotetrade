@@ -30,22 +30,41 @@ def format_discord_tick(title: str, lines: list[str]) -> str:
     status = _overall_status(ticks)
     body = [f"**{status} {title}**"]
     for tick in ticks:
-        body.append(f"- **{tick.title}** `{tick.status}`")
+        body.append(f"- **{tick.title}** `{_ja_status(tick.status)}`")
         body.extend(f"  - {line}" for line in tick.lines)
     return "\n".join(body)
 
 
 def format_discord_error(title: str, error: Exception | str) -> str:
-    return f"**ERROR {title}**\n- `{error}`"
+    return f"**エラー {title}**\n- `{error}`"
 
 
 def _overall_status(ticks: list[DiscordTick]) -> str:
     statuses = {tick.status for tick in ticks}
     if statuses & {"opened", "closed", "opportunity", "placed", "both_filled", "buy_only", "sell_only"}:
-        return "TRADE"
+        return "売買あり"
     if statuses & {"error"}:
-        return "ERROR"
-    return "WAIT"
+        return "エラー"
+    return "待機"
+
+
+def _ja_status(status: str) -> str:
+    return {
+        "opened": "新規建て",
+        "closed": "決済",
+        "opportunity": "機会あり",
+        "placed": "指値配置",
+        "both_filled": "両足約定",
+        "buy_only": "買いだけ約定",
+        "sell_only": "売りだけ約定",
+        "no_candidate": "候補なし",
+        "none": "なし",
+        "wait": "待機",
+        "hold": "保有中",
+        "pending": "指値待ち",
+        "expired": "期限切れ",
+        "no_pending": "未発注",
+    }.get(status, status)
 
 
 def _summarize_line(line: str) -> DiscordTick:
@@ -70,23 +89,23 @@ def _parse_fields(text: str) -> dict[str, str]:
 
 def _interesting_fields(fields: dict[str, str]) -> list[str]:
     labels = [
-        ("position", "position"),
-        ("pending", "pending"),
-        ("realized_pnl", "realized"),
-        ("unrealized_pnl", "unrealized"),
-        ("pnl", "pnl"),
-        ("net_profit", "net profit"),
-        ("est_profit", "est profit"),
-        ("net_spread", "net spread"),
-        ("spread", "spread"),
+        ("position", "ポジション"),
+        ("pending", "待機中の指値"),
+        ("realized_pnl", "実現損益"),
+        ("unrealized_pnl", "含み損益"),
+        ("pnl", "今回損益"),
+        ("net_profit", "純利益"),
+        ("est_profit", "想定利益"),
+        ("net_spread", "純スプレッド"),
+        ("spread", "スプレッド"),
         ("z", "z"),
-        ("fill", "fill"),
-        ("reason", "reason"),
-        ("buy", "buy"),
-        ("sell", "sell"),
-        ("long", "long"),
-        ("short", "short"),
-        ("signal", "signal"),
+        ("fill", "約定判定"),
+        ("reason", "理由"),
+        ("buy", "買い"),
+        ("sell", "売り"),
+        ("long", "ロング"),
+        ("short", "ショート"),
+        ("signal", "シグナル"),
     ]
     lines = []
     for key, label in labels:

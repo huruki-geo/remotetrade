@@ -15,15 +15,15 @@ class NotifyTest(unittest.TestCase):
             ],
         )
 
-        self.assertIn("**TRADE Limit Paper Fill**", message)
-        self.assertIn("**LimitPaper** `both_filled`", message)
-        self.assertIn("pnl: `+1.2300`", message)
-        self.assertIn("realized: `2.3400`", message)
+        self.assertIn("**売買あり Limit Paper Fill**", message)
+        self.assertIn("**LimitPaper** `両足約定`", message)
+        self.assertIn("今回損益: `+1.2300`", message)
+        self.assertIn("実現損益: `2.3400`", message)
 
     def test_formats_error(self) -> None:
         message = format_discord_error("Paper Tick", "boom")
 
-        self.assertEqual(message, "**ERROR Paper Tick**\n- `boom`")
+        self.assertEqual(message, "**エラー Paper Tick**\n- `boom`")
 
 
 if __name__ == "__main__":
