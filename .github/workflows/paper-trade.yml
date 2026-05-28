@@ -50,6 +50,30 @@ jobs:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         run: python -m remotetrade.app --once --stock-patterns stock_patterns.json --discord --discord-events-only
 
+      - name: Run arbitrage paper tick
+        if: always()
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: python -m remotetrade.app --once --arbitrage --discord --discord-events-only
+
+      - name: Run limit arbitrage paper tick
+        if: always()
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: python -m remotetrade.app --once --limit-arbitrage --discord --discord-events-only
+
+      - name: Run wick paper tick
+        if: always()
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: python -m remotetrade.app --once --wick --discord --discord-events-only
+
+      - name: Run spread paper tick
+        if: always()
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: python -m remotetrade.app --once --spread --discord --discord-events-only
+
       - name: Save paper state
         if: always()
         uses: actions/cache/save@v4

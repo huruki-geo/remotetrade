@@ -44,9 +44,23 @@ class Settings:
     max_trade_size_usd: float = 30.0
     min_trade_size_usd: float = 10.0
     start_cash_usd: float = 300.0
+    arbitrage_notional_usd: float = 100.0
+    arbitrage_fee_bps: float = 20.0
+    arbitrage_min_net_spread_pct: float = 0.001
+    limit_maker_fee_bps: float = 10.0
+    limit_price_improvement_bps: float = 1.0
+    wick_granularity_seconds: int = 60
+    wick_min_ratio: float = 0.55
+    wick_min_range_pct: float = 0.001
+    spread_window: int = 30
+    spread_entry_zscore: float = 2.0
+    spread_exit_zscore: float = 0.5
+    spread_stop_zscore: float = 4.0
+    spread_notional_usd: float = 100.0
     state_path: Path = Path("data/paper_state.json")
     trades_path: Path = Path("data/trades.csv")
     ticks_path: Path = Path("data/ticks.csv")
+    arbitrage_ticks_path: Path = Path("data/arbitrage_ticks.csv")
 
     @classmethod
     def from_env(cls) -> "Settings":
@@ -68,7 +82,24 @@ class Settings:
             max_trade_size_usd=env_float("MAX_TRADE_SIZE_USD", cls.max_trade_size_usd),
             min_trade_size_usd=env_float("MIN_TRADE_SIZE_USD", cls.min_trade_size_usd),
             start_cash_usd=env_float("START_CASH_USD", cls.start_cash_usd),
+            arbitrage_notional_usd=env_float("ARBITRAGE_NOTIONAL_USD", cls.arbitrage_notional_usd),
+            arbitrage_fee_bps=env_float("ARBITRAGE_FEE_BPS", cls.arbitrage_fee_bps),
+            arbitrage_min_net_spread_pct=env_float(
+                "ARBITRAGE_MIN_NET_SPREAD_PCT",
+                cls.arbitrage_min_net_spread_pct,
+            ),
+            limit_maker_fee_bps=env_float("LIMIT_MAKER_FEE_BPS", cls.limit_maker_fee_bps),
+            limit_price_improvement_bps=env_float("LIMIT_PRICE_IMPROVEMENT_BPS", cls.limit_price_improvement_bps),
+            wick_granularity_seconds=env_int("WICK_GRANULARITY_SECONDS", cls.wick_granularity_seconds),
+            wick_min_ratio=env_float("WICK_MIN_RATIO", cls.wick_min_ratio),
+            wick_min_range_pct=env_float("WICK_MIN_RANGE_PCT", cls.wick_min_range_pct),
+            spread_window=env_int("SPREAD_WINDOW", cls.spread_window),
+            spread_entry_zscore=env_float("SPREAD_ENTRY_ZSCORE", cls.spread_entry_zscore),
+            spread_exit_zscore=env_float("SPREAD_EXIT_ZSCORE", cls.spread_exit_zscore),
+            spread_stop_zscore=env_float("SPREAD_STOP_ZSCORE", cls.spread_stop_zscore),
+            spread_notional_usd=env_float("SPREAD_NOTIONAL_USD", cls.spread_notional_usd),
             state_path=Path(os.getenv("STATE_PATH", str(cls.state_path))),
             trades_path=Path(os.getenv("TRADES_PATH", str(cls.trades_path))),
             ticks_path=Path(os.getenv("TICKS_PATH", str(cls.ticks_path))),
+            arbitrage_ticks_path=Path(os.getenv("ARBITRAGE_TICKS_PATH", str(cls.arbitrage_ticks_path))),
         )

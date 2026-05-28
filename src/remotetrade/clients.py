@@ -11,6 +11,33 @@ import requests
 
 
 @dataclass(frozen=True)
+class Quote:
+    venue: str
+    symbol: str
+    bid: float
+    ask: float
+    raw: dict[str, Any]
+
+    @property
+    def mid(self) -> float:
+        return (self.bid + self.ask) / 2
+
+
+@dataclass(frozen=True)
+class Candle:
+    time: datetime
+    low: float
+    high: float
+    open: float
+    close: float
+    volume: float
+
+    @property
+    def range(self) -> float:
+        return self.high - self.low
+
+
+@dataclass(frozen=True)
 class PredictionMarket:
     id: str
     slug: str
@@ -152,7 +179,7 @@ def _dedupe_markets(markets: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 
 class CoinbaseClient:
-    def __init__(self, base_url: str, timeout: float = 10.0) -> None:
+    def __init__(self, base_url: str = "https://api.exchange.coinbase.com", timeout: float = 10.0) -> None:
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
 
@@ -161,6 +188,80 @@ class CoinbaseClient:
         response.raise_for_status()
         payload = response.json()
         return float(payload["price"])
+
+    def get_quote(self, product_id: str) -> Quote:
+        response = requests.get(f"{self.base_url}/products/{product_id}/ticker", timeout=self.timeout)
+        response.raise_for_status()
+        payload = response.json()
+        return Quote(
+            venue="coinbase",
+            symbol=product_id,
+            bid=float(payload["bid"]),
+            ask=float(payload["ask"]),
+            raw=payload,
+        )
+
+    def get_candles(self, product_id: str, granularity: int) -> list[Candle]:
+        response = requests.get(
+            f"{self.base_url}/products/{product_id}/candles",
+            params={"granularity": granularity},
+            timeout=self.timeout,
+        )
+        response.raise_for_status()
+        candles = [
+            Candle(
+                time=datetime.fromtimestamp(float(row[0]), UTC),
+                low=float(row[1]),
+                high=float(row[2]),
+                open=float(row[3]),
+                close=float(row[4]),
+                volume=float(row[5]),
+            )
+            for row in response.json()
+        ]
+        return sorted(candles, key=lambda candle: candle.time)
+
+
+class KrakenClient:
+    def __init__(self, base_url: str = "https://api.kraken.com", timeout: float = 10.0) -> None:
+        self.base_url = base_url.rstrip("/")
+        self.timeout = timeout
+
+    def get_quote(self, pair: str) -> Quote:
+        response = requests.get(f"{self.base_url}/0/public/Ticker", params={"pair": pair}, timeout=self.timeout)
+        response.raise_for_status()
+        payload = response.json()
+        if payload.get("error"):
+            raise RuntimeError(f"Kraken ticker error: {payload['error']}")
+        result = payload.get("result") or {}
+        if not result:
+            raise RuntimeError(f"No Kraken ticker result for {pair}.")
+        ticker = next(iter(result.values()))
+        return Quote(
+            venue="kraken",
+            symbol=pair,
+            bid=float(ticker["b"][0]),
+            ask=float(ticker["a"][0]),
+            raw=ticker,
+        )
+
+
+class BitstampClient:
+    def __init__(self, base_url: str = "https://www.bitstamp.net", timeout: float = 10.0) -> None:
+        self.base_url = base_url.rstrip("/")
+        self.timeout = timeout
+
+    def get_quote(self, currency_pair: str) -> Quote:
+        response = requests.get(f"{self.base_url}/api/v2/ticker/{currency_pair.lower()}/", timeout=self.timeout)
+        response.raise_for_status()
+        payload = response.json()
+        return Quote(
+            venue="bitstamp",
+            symbol=currency_pair.upper(),
+            bid=float(payload["bid"]),
+            ask=float(payload["ask"]),
+            raw=payload,
+        )
 
 
 class StooqClient:
