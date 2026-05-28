@@ -1,0 +1,17 @@
+[Unit]
+Description=RemoteTrade limit paper trading loop
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=remotetrade
+Group=remotetrade
+WorkingDirectory=/opt/remotetrade
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/opt/remotetrade/.venv/bin/python -m remotetrade.app --limit-paper --discord --discord-events-only
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

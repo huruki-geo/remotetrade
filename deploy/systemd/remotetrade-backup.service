@@ -1,0 +1,9 @@
+[Unit]
+Description=Backup RemoteTrade data directory
+
+[Service]
+Type=oneshot
+User=root
+Group=root
+WorkingDirectory=/opt/remotetrade
+ExecStart=/opt/remotetrade/deploy/backup-data.sh
