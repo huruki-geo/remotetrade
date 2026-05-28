@@ -34,6 +34,7 @@ class Settings:
     market_slug: str | None = None
     market_query: str = "BTC Up or Down 5m"
     crypto_product_id: str = "BTC-USD"
+    crypto_product_ids: tuple[str, ...] = ("BTC-USD",)
     poll_seconds: int = 15
     hold_seconds: int = 300
     entry_threshold: float = 0.06
@@ -52,6 +53,7 @@ class Settings:
     limit_taker_fee_bps: float = 20.0
     limit_price_improvement_bps: float = 1.0
     limit_order_ttl_ticks: int = 3
+    limit_paper_variants: str = "normal:0.001:1.0,loose:0.0005:1.0,strict:0.002:1.0"
     wick_granularity_seconds: int = 60
     wick_min_ratio: float = 0.55
     wick_min_range_pct: float = 0.001
@@ -60,6 +62,8 @@ class Settings:
     spread_exit_zscore: float = 0.5
     spread_stop_zscore: float = 4.0
     spread_notional_usd: float = 100.0
+    health_max_tick_age_seconds: int = 300
+    health_min_free_disk_mb: int = 512
     state_path: Path = Path("data/paper_state.json")
     trades_path: Path = Path("data/trades.csv")
     ticks_path: Path = Path("data/ticks.csv")
@@ -75,6 +79,7 @@ class Settings:
             market_slug=market_slug,
             market_query=os.getenv("MARKET_QUERY", cls.market_query),
             crypto_product_id=os.getenv("CRYPTO_PRODUCT_ID", cls.crypto_product_id),
+            crypto_product_ids=_env_csv("CRYPTO_PRODUCT_IDS", cls.crypto_product_ids),
             poll_seconds=env_int("POLL_SECONDS", cls.poll_seconds),
             hold_seconds=env_int("HOLD_SECONDS", cls.hold_seconds),
             entry_threshold=env_float("ENTRY_THRESHOLD", cls.entry_threshold),
@@ -96,6 +101,7 @@ class Settings:
             limit_taker_fee_bps=env_float("LIMIT_TAKER_FEE_BPS", cls.limit_taker_fee_bps),
             limit_price_improvement_bps=env_float("LIMIT_PRICE_IMPROVEMENT_BPS", cls.limit_price_improvement_bps),
             limit_order_ttl_ticks=env_int("LIMIT_ORDER_TTL_TICKS", cls.limit_order_ttl_ticks),
+            limit_paper_variants=os.getenv("LIMIT_PAPER_VARIANTS", cls.limit_paper_variants),
             wick_granularity_seconds=env_int("WICK_GRANULARITY_SECONDS", cls.wick_granularity_seconds),
             wick_min_ratio=env_float("WICK_MIN_RATIO", cls.wick_min_ratio),
             wick_min_range_pct=env_float("WICK_MIN_RANGE_PCT", cls.wick_min_range_pct),
@@ -104,8 +110,17 @@ class Settings:
             spread_exit_zscore=env_float("SPREAD_EXIT_ZSCORE", cls.spread_exit_zscore),
             spread_stop_zscore=env_float("SPREAD_STOP_ZSCORE", cls.spread_stop_zscore),
             spread_notional_usd=env_float("SPREAD_NOTIONAL_USD", cls.spread_notional_usd),
+            health_max_tick_age_seconds=env_int("HEALTH_MAX_TICK_AGE_SECONDS", cls.health_max_tick_age_seconds),
+            health_min_free_disk_mb=env_int("HEALTH_MIN_FREE_DISK_MB", cls.health_min_free_disk_mb),
             state_path=Path(os.getenv("STATE_PATH", str(cls.state_path))),
             trades_path=Path(os.getenv("TRADES_PATH", str(cls.trades_path))),
             ticks_path=Path(os.getenv("TICKS_PATH", str(cls.ticks_path))),
             arbitrage_ticks_path=Path(os.getenv("ARBITRAGE_TICKS_PATH", str(cls.arbitrage_ticks_path))),
         )
+
+
+def _env_csv(name: str, default: tuple[str, ...]) -> tuple[str, ...]:
+    value = os.getenv(name)
+    if value in (None, ""):
+        return default
+    return tuple(item.strip() for item in value.split(",") if item.strip())

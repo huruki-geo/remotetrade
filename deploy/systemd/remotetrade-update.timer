@@ -1,0 +1,11 @@
+[Unit]
+Description=Check for RemoteTrade updates every 30 minutes
+
+[Timer]
+OnBootSec=5min
+OnUnitActiveSec=30min
+AccuracySec=30s
+Unit=remotetrade-update.service
+
+[Install]
+WantedBy=timers.target

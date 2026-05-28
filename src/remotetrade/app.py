@@ -17,14 +17,17 @@ from remotetrade.arbitrage import (
 )
 from remotetrade.clients import Candle, CoinbaseClient, PolymarketClient
 from remotetrade.config import Settings
+from remotetrade.health import build_health_report
 from remotetrade.limit_paper import LimitPaperBroker, find_limit_candidate
 from remotetrade.notify import format_discord_error, format_discord_tick, send_discord_message
 from remotetrade.paper import PaperBroker
 from remotetrade.patterns import Pattern, load_patterns
 from remotetrade.profit_guard import best_depth_arbitrage
+from remotetrade.report import build_daily_report
 from remotetrade.spread import SpreadPaperBroker, best_spread_snapshot, decide_spread, zscore
 from remotetrade.stock_app import run_stock_patterns_once
 from remotetrade.strategy import PolymarketLeadStrategy
+from remotetrade.variants import LimitPaperVariant, file_suffix, load_limit_paper_variants
 from remotetrade.wick import WickReversalStrategy, detect_wick_signal
 
 
@@ -109,13 +112,32 @@ def run_depth_arbitrage_once(settings: Settings) -> TickResult:
 
 
 def run_limit_paper_once(settings: Settings) -> TickResult:
+    return run_limit_paper_for(
+        settings,
+        product_id=settings.crypto_product_id,
+        variant=LimitPaperVariant(
+            "default",
+            settings.arbitrage_min_net_spread_pct,
+            settings.limit_price_improvement_bps,
+        ),
+        suffix="",
+    )
+
+
+def run_limit_paper_for(
+    settings: Settings,
+    product_id: str,
+    variant: LimitPaperVariant,
+    suffix: str,
+) -> TickResult:
     data_dir = settings.state_path.parent
-    books = fetch_order_books(default_venues(settings.crypto_product_id))
+    books = fetch_order_books(default_venues(product_id))
+    file_prefix = "limit_paper" if not suffix else f"limit_paper_{suffix}"
     broker = LimitPaperBroker(
-        data_dir / "limit_paper_state.json",
-        data_dir / "limit_paper_trades.csv",
-        data_dir / "limit_paper_ticks.csv",
-        data_dir / "orderbook_snapshots.jsonl",
+        data_dir / f"{file_prefix}_state.json",
+        data_dir / f"{file_prefix}_trades.csv",
+        data_dir / f"{file_prefix}_ticks.csv",
+        data_dir / f"orderbook_snapshots{'' if not suffix else '_' + suffix}.jsonl",
         settings.start_cash_usd,
         settings.limit_maker_fee_bps,
         settings.limit_taker_fee_bps,
@@ -130,8 +152,8 @@ def run_limit_paper_once(settings: Settings) -> TickResult:
             books,
             settings.arbitrage_notional_usd,
             settings.limit_maker_fee_bps,
-            settings.arbitrage_min_net_spread_pct,
-            settings.limit_price_improvement_bps,
+            variant.min_net_spread_pct,
+            variant.price_improvement_bps,
         )
         if candidate:
             place_outcome = broker.place_order(candidate)
@@ -145,12 +167,21 @@ def run_limit_paper_once(settings: Settings) -> TickResult:
         )
     fill_label = fill_result.outcome if fill_result else fill_outcome
     line = (
-        f"[LimitPaper] {place_outcome if fill_outcome == 'no_pending' else fill_outcome}: "
+        f"[LimitPaper {product_id} {variant.id}] {place_outcome if fill_outcome == 'no_pending' else fill_outcome}: "
         f"fill={fill_label} pnl={fill_pnl:+.4f} realized_pnl={broker.state.realized_pnl:.4f} "
         f"pending={pending_label} both={broker.state.both_filled} "
         f"one_leg={broker.state.buy_only + broker.state.sell_only} expired={broker.state.expired}"
     )
-    return TickResult("limit_paper", line, place_outcome if place_outcome != "no_candidate" else fill_outcome)
+    return TickResult(f"limit_paper_{product_id}_{variant.id}", line, place_outcome if place_outcome != "no_candidate" else fill_outcome)
+
+
+def run_portfolio_paper_once(settings: Settings) -> list[TickResult]:
+    results: list[TickResult] = []
+    variants = load_limit_paper_variants(settings.limit_paper_variants)
+    for product_id in settings.crypto_product_ids:
+        for variant in variants:
+            results.append(run_limit_paper_for(settings, product_id, variant, file_suffix(product_id, variant.id)))
+    return results
 
 
 def run_wick_once(settings: Settings, coinbase: CoinbaseClient | None = None) -> TickResult:
@@ -381,8 +412,11 @@ def main() -> None:
     parser.add_argument("--limit-arbitrage", action="store_true", help="Quote post-only limit arbitrage candidates.")
     parser.add_argument("--depth-arbitrage", action="store_true", help="Scan depth-adjusted arbitrage opportunities.")
     parser.add_argument("--limit-paper", action="store_true", help="Run post-only limit arbitrage paper fills.")
+    parser.add_argument("--portfolio-paper", action="store_true", help="Run limit paper across configured products and variants.")
     parser.add_argument("--wick", action="store_true", help="Run candle-wick reversal paper trading.")
     parser.add_argument("--spread", action="store_true", help="Run cross-exchange spread mean-reversion paper trading.")
+    parser.add_argument("--report", action="store_true", help="Print a daily paper-trading report.")
+    parser.add_argument("--health-check", action="store_true", help="Check data freshness and disk health.")
     parser.add_argument("--discord", action="store_true", help="Send tick results to DISCORD_WEBHOOK_URL.")
     parser.add_argument("--discord-events-only", action="store_true", help="Notify Discord only when a trade event occurs.")
     parser.add_argument("--duration-seconds", type=int, help="Run for this many seconds, then exit.")
@@ -418,6 +452,11 @@ def main() -> None:
                 result = run_limit_paper_once(settings)
                 print(result.line, flush=True)
                 notify_tick("指値裁定紙トレード", [result], args.discord, args.discord_events_only)
+            elif args.portfolio_paper:
+                results = run_portfolio_paper_once(settings)
+                message = "Portfolio paper tick\n" + "\n".join(result.line for result in results)
+                print(message, flush=True)
+                notify_tick("ポートフォリオ紙トレード", results, args.discord, args.discord_events_only)
             elif args.wick:
                 result = run_wick_once(settings)
                 print(result.line, flush=True)
@@ -426,6 +465,20 @@ def main() -> None:
                 result = run_spread_once(settings)
                 print(result.line, flush=True)
                 notify_tick("スプレッド紙トレード", [result], args.discord, args.discord_events_only)
+            elif args.report:
+                report = build_daily_report(settings.state_path.parent)
+                print(report, flush=True)
+                if args.discord:
+                    maybe_send_discord(report)
+            elif args.health_check:
+                report = build_health_report(
+                    settings.state_path.parent,
+                    settings.health_max_tick_age_seconds,
+                    settings.health_min_free_disk_mb,
+                )
+                print(report.message, flush=True)
+                if args.discord and not report.ok:
+                    maybe_send_discord(report.message)
             else:
                 result = run_once(settings)
                 print(result.line, flush=True)

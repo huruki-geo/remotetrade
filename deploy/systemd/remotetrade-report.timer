@@ -1,0 +1,10 @@
+[Unit]
+Description=Send RemoteTrade daily report at 09:05 JST
+
+[Timer]
+OnCalendar=*-*-* 00:05:00
+Persistent=true
+Unit=remotetrade-report.service
+
+[Install]
+WantedBy=timers.target

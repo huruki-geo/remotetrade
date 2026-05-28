@@ -39,13 +39,24 @@ install -m 0644 "$APP_DIR/deploy/systemd/remotetrade-depth-arb.service" /etc/sys
 install -m 0644 "$APP_DIR/deploy/systemd/remotetrade-depth-arb.timer" /etc/systemd/system/
 install -m 0644 "$APP_DIR/deploy/systemd/remotetrade-backup.service" /etc/systemd/system/
 install -m 0644 "$APP_DIR/deploy/systemd/remotetrade-backup.timer" /etc/systemd/system/
+install -m 0644 "$APP_DIR/deploy/systemd/remotetrade-health.service" /etc/systemd/system/
+install -m 0644 "$APP_DIR/deploy/systemd/remotetrade-health.timer" /etc/systemd/system/
+install -m 0644 "$APP_DIR/deploy/systemd/remotetrade-report.service" /etc/systemd/system/
+install -m 0644 "$APP_DIR/deploy/systemd/remotetrade-report.timer" /etc/systemd/system/
+install -m 0644 "$APP_DIR/deploy/systemd/remotetrade-update.service" /etc/systemd/system/
+install -m 0644 "$APP_DIR/deploy/systemd/remotetrade-update.timer" /etc/systemd/system/
 chmod +x "$APP_DIR/deploy/backup-data.sh"
+chmod +x "$APP_DIR/deploy/update.sh"
 
 systemctl daemon-reload
 systemctl enable --now remotetrade-limit-paper.service
 systemctl enable --now remotetrade-depth-arb.timer
 systemctl enable --now remotetrade-backup.timer
+systemctl enable --now remotetrade-health.timer
+systemctl enable --now remotetrade-report.timer
+systemctl enable --now remotetrade-update.timer
 
 echo "Installed remotetrade at $APP_DIR"
 echo "Edit config: sudo nano $APP_DIR/.env"
 echo "Logs: sudo journalctl -u remotetrade-limit-paper.service -f"
+echo "Updates: sudo journalctl -u remotetrade-update.service -n 50 --no-pager"

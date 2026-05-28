@@ -1,0 +1,11 @@
+[Unit]
+Description=Update RemoteTrade from GitHub
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+Group=root
+WorkingDirectory=/opt/remotetrade
+ExecStart=/opt/remotetrade/deploy/update.sh
