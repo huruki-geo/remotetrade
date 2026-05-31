@@ -19,6 +19,7 @@ from remotetrade.clients import Candle, CoinbaseClient, PolymarketClient
 from remotetrade.bitbank_route_probe import append_bitbank_route_probe, format_bitbank_route_probe, scan_bitbank_routes
 from remotetrade.bsc_qash_route_probe import append_bsc_qash_route_probe, format_bsc_qash_route_probe, scan_bsc_qash_route
 from remotetrade.boba_cex_dex_probe import append_boba_cex_dex_probe, format_boba_cex_dex_probe, scan_boba_cex_dex
+from remotetrade.boba_synapse_probe import append_boba_synapse_probe, format_boba_synapse_probe, scan_boba_synapse
 from remotetrade.boba_zencha_probe import (
     append_boba_zencha_probe,
     build_boba_zencha_report,
@@ -465,6 +466,7 @@ def main() -> None:
     parser.add_argument("--dex-route-probe", action="store_true", help="Record paper-only allowlisted DEX routes.")
     parser.add_argument("--bsc-qash-route-probe", action="store_true", help="Record the paper-only qash-style PancakeSwap route.")
     parser.add_argument("--boba-cex-dex-probe", action="store_true", help="Record paper-only OolongSwap versus CEX stablecoin divergence.")
+    parser.add_argument("--boba-synapse-probe", action="store_true", help="Record paper-only BOBA Synapse canonical stablecoin divergence.")
     parser.add_argument("--boba-zencha-probe", action="store_true", help="Record paper-only Zencha StableSwap versus CEX divergence.")
     parser.add_argument("--boba-zencha-report", action="store_true", help="Report independent Zencha divergence episodes.")
     parser.add_argument("--discord", action="store_true", help="Send tick results to DISCORD_WEBHOOK_URL.")
@@ -566,6 +568,15 @@ def main() -> None:
         print(message, flush=True)
         if args.discord and probe.opportunity:
             maybe_send_discord(message + "\n" + probe.caveat)
+        return
+    if args.boba_synapse_probe:
+        probe = scan_boba_synapse(
+            EthereumRpcClient(settings.boba_rpc_url),
+            min_net_return_pct=settings.boba_synapse_min_net_return_pct,
+            coinbase_url=settings.coinbase_url,
+        )
+        append_boba_synapse_probe(settings.state_path.parent / "boba_synapse_probes.jsonl", probe)
+        print(format_boba_synapse_probe(probe), flush=True)
         return
     if args.boba_zencha_probe:
         path = settings.state_path.parent / "boba_zencha_probes.jsonl"

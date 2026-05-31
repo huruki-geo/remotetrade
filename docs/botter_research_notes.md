@@ -437,3 +437,15 @@ python -m remotetrade.zencha_live --execute --amount-usdc 10 --confirm EXECUTE_Z
 ```
 
 Do not fund the canary wallet until its address has been backed up and the BOBA token contracts, bridge route, and recovery plan have been checked independently.
+
+## BOBA Synapse StableSwap Probe
+
+Synapse's BOBA pool is a second observable BOBA StableSwap candidate. Its legacy `nUSD` token is severely divergent and must remain quarantined. Monitor only the BOBA allowlisted `USDC <-> USDT` directions and record the legacy balances for context.
+
+Initial May 31, 2026 direct RPC observations:
+
+- Pool balances were approximately `nUSD 1.12 / DAI 702 / USDC 581 / USDT 644`.
+- `USDC -> USDT` returned approximately `+1.83%` after the Coinbase `USDT-USD` bid and estimated BOBA gas at `$1`.
+- Price impact consumed the edge quickly: the observed maximum was approximately `+$0.25` around `$20`.
+
+This pool is useful as another BOBA replenishment signal, not as a standalone target for new bridge costs. Never treat apparent `nUSD` routes as USD arbitrage without independently proving redemption.

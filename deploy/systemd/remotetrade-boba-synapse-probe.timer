@@ -1,0 +1,11 @@
+[Unit]
+Description=Run RemoteTrade Boba Synapse canonical stablecoin paper probe every 5 minutes
+
+[Timer]
+OnBootSec=330s
+OnUnitActiveSec=5min
+AccuracySec=10s
+Unit=remotetrade-boba-synapse-probe.service
+
+[Install]
+WantedBy=timers.target

@@ -43,6 +43,8 @@ install -m 0644 "$APP_DIR/deploy/systemd/remotetrade-boba-cex-dex-probe.service"
 install -m 0644 "$APP_DIR/deploy/systemd/remotetrade-boba-cex-dex-probe.timer" /etc/systemd/system/
 install -m 0644 "$APP_DIR/deploy/systemd/remotetrade-boba-zencha-probe.service" /etc/systemd/system/
 install -m 0644 "$APP_DIR/deploy/systemd/remotetrade-boba-zencha-probe.timer" /etc/systemd/system/
+install -m 0644 "$APP_DIR/deploy/systemd/remotetrade-boba-synapse-probe.service" /etc/systemd/system/
+install -m 0644 "$APP_DIR/deploy/systemd/remotetrade-boba-synapse-probe.timer" /etc/systemd/system/
 install -m 0644 "$APP_DIR/deploy/systemd/remotetrade-maker-probe.service" /etc/systemd/system/
 install -m 0644 "$APP_DIR/deploy/systemd/remotetrade-depth-arb.service" /etc/systemd/system/
 install -m 0644 "$APP_DIR/deploy/systemd/remotetrade-depth-arb.timer" /etc/systemd/system/
@@ -66,6 +68,7 @@ systemctl enable --now remotetrade-dex-route-probe.timer
 systemctl enable --now remotetrade-bsc-qash-route-probe.timer
 systemctl enable --now remotetrade-boba-cex-dex-probe.timer
 systemctl enable --now remotetrade-boba-zencha-probe.timer
+systemctl enable --now remotetrade-boba-synapse-probe.timer
 systemctl enable --now remotetrade-depth-arb.timer
 systemctl enable --now remotetrade-backup.timer
 systemctl enable --now remotetrade-health.timer

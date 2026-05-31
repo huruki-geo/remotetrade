@@ -74,6 +74,7 @@ def build_health_report(data_dir: Path, max_tick_age_seconds: int, min_free_disk
         data_dir / "bsc_qash_route_probes.jsonl",
         data_dir / "boba_cex_dex_probes.jsonl",
         data_dir / "boba_zencha_probes.jsonl",
+        data_dir / "boba_synapse_probes.jsonl",
     ):
         if not route_probe_path.exists():
             continue
