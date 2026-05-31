@@ -15,16 +15,15 @@ REMOTE="$(git rev-parse "origin/$BRANCH")"
 
 if [ "$LOCAL" = "$REMOTE" ]; then
   echo "remotetrade already up to date: $LOCAL"
-  exit 0
+else
+  echo "updating remotetrade: $LOCAL -> $REMOTE"
+
+  git pull --ff-only origin "$BRANCH"
+
+  python3 -m venv "$APP_DIR/.venv"
+  "$APP_DIR/.venv/bin/pip" install --upgrade pip
+  "$APP_DIR/.venv/bin/pip" install -e "$APP_DIR"
 fi
-
-echo "updating remotetrade: $LOCAL -> $REMOTE"
-
-git pull --ff-only origin "$BRANCH"
-
-python3 -m venv "$APP_DIR/.venv"
-"$APP_DIR/.venv/bin/pip" install --upgrade pip
-"$APP_DIR/.venv/bin/pip" install -e "$APP_DIR"
 
 install -m 0644 "$APP_DIR/deploy/systemd/remotetrade-limit-paper.service" /etc/systemd/system/
 install -m 0644 "$APP_DIR/deploy/systemd/remotetrade-poly-5m.service" /etc/systemd/system/
