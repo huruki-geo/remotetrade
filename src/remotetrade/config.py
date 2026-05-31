@@ -65,6 +65,10 @@ class Settings:
     spread_notional_usd: float = 100.0
     health_max_tick_age_seconds: int = 300
     health_min_free_disk_mb: int = 512
+    replay_required_win_rate: float = 0.70
+    replay_min_trades: int = 30
+    replay_imbalance_threshold: float = 0.20
+    replay_fee_per_share: float = 0.0
     state_path: Path = Path("data/paper_state.json")
     trades_path: Path = Path("data/trades.csv")
     ticks_path: Path = Path("data/ticks.csv")
@@ -117,6 +121,10 @@ class Settings:
             spread_notional_usd=env_float("SPREAD_NOTIONAL_USD", cls.spread_notional_usd),
             health_max_tick_age_seconds=env_int("HEALTH_MAX_TICK_AGE_SECONDS", cls.health_max_tick_age_seconds),
             health_min_free_disk_mb=env_int("HEALTH_MIN_FREE_DISK_MB", cls.health_min_free_disk_mb),
+            replay_required_win_rate=env_float("REPLAY_REQUIRED_WIN_RATE", cls.replay_required_win_rate),
+            replay_min_trades=env_int("REPLAY_MIN_TRADES", cls.replay_min_trades),
+            replay_imbalance_threshold=env_float("REPLAY_IMBALANCE_THRESHOLD", cls.replay_imbalance_threshold),
+            replay_fee_per_share=env_float("REPLAY_FEE_PER_SHARE", cls.replay_fee_per_share),
             state_path=Path(os.getenv("STATE_PATH", str(cls.state_path))),
             trades_path=Path(os.getenv("TRADES_PATH", str(cls.trades_path))),
             ticks_path=Path(os.getenv("TICKS_PATH", str(cls.ticks_path))),

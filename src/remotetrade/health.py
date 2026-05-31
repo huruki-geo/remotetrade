@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import csv
+import json
 import shutil
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -29,6 +30,21 @@ def build_health_report(data_dir: Path, max_tick_age_seconds: int, min_free_disk
         lines.append(f"- {path.name}: 最終tick `{latest.isoformat(timespec='seconds')}` / {age:.0f}秒前")
         if age > max_tick_age_seconds:
             issues.append(f"{path.name}: 最終tickが古いです ({age:.0f}秒前)")
+
+    stream_paths = [
+        data_dir / "polymarket_crypto_prices.jsonl",
+        data_dir / "polymarket_btc_5m_clob.jsonl",
+    ]
+    if any(path.exists() for path in stream_paths):
+        for path in stream_paths:
+            latest = _latest_jsonl_time(path)
+            if latest is None:
+                issues.append(f"{path.name}: no readable stream event")
+                continue
+            age = (datetime.now(UTC) - latest).total_seconds()
+            lines.append(f"- {path.name}: latest event `{latest.isoformat(timespec='seconds')}` / {age:.0f}s ago")
+            if age > max_tick_age_seconds:
+                issues.append(f"{path.name}: stream event is stale ({age:.0f}s ago)")
 
     usage = shutil.disk_usage(data_dir if data_dir.exists() else Path("."))
     free_mb = usage.free / 1024 / 1024
@@ -59,6 +75,24 @@ def _latest_tick_time(path: Path) -> datetime | None:
             try:
                 value = datetime.fromisoformat(raw.replace("Z", "+00:00"))
             except ValueError:
+                continue
+            if value.tzinfo is None:
+                value = value.replace(tzinfo=UTC)
+            latest = value
+    return latest
+
+
+def _latest_jsonl_time(path: Path) -> datetime | None:
+    if not path.exists():
+        return None
+    latest: datetime | None = None
+    with path.open(encoding="utf-8") as handle:
+        for line in handle:
+            try:
+                payload = json.loads(line)
+                raw = payload.get("received_at") or ""
+                value = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+            except (json.JSONDecodeError, AttributeError, ValueError):
                 continue
             if value.tzinfo is None:
                 value = value.replace(tzinfo=UTC)

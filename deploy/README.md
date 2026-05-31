@@ -29,6 +29,7 @@ systemctl status remotetrade-limit-paper.service
 journalctl -u remotetrade-poly-5m.service -f
 journalctl -u remotetrade-poly-rtds.service -f
 journalctl -u remotetrade-poly-clob.service -f
+journalctl -u remotetrade-poly-replay.service -n 50 --no-pager
 journalctl -u remotetrade-limit-paper.service -f
 systemctl list-timers 'remotetrade-*'
 systemctl restart remotetrade-limit-paper.service
@@ -63,6 +64,14 @@ python -m remotetrade.app --collect-poly-clob
 ```
 
 Events are appended to `data/polymarket_btc_5m_clob.jsonl`.
+
+The hourly replay report applies the configured validation gate:
+
+```bash
+python -m remotetrade.app --poly-replay --discord
+```
+
+The default gate requires at least `30` trades, a positive validation-period PnL, and a validation win rate of at least `70%`.
 
 The depth arbitrage guard runs every 5 minutes.
 

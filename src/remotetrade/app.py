@@ -23,6 +23,7 @@ from remotetrade.notify import format_discord_error, format_discord_tick, send_d
 from remotetrade.paper import PaperBroker
 from remotetrade.patterns import Pattern, load_patterns
 from remotetrade.polymarket_clob import collect_btc_5m_market_events
+from remotetrade.polymarket_replay import build_replay_report, format_replay_report, write_replay_report
 from remotetrade.polymarket_rtds import collect_crypto_prices
 from remotetrade.profit_guard import best_depth_arbitrage
 from remotetrade.report import build_daily_report
@@ -430,6 +431,7 @@ def main() -> None:
     parser.add_argument("--health-check", action="store_true", help="Check data freshness and disk health.")
     parser.add_argument("--collect-poly-rtds", action="store_true", help="Collect public Polymarket RTDS crypto prices.")
     parser.add_argument("--collect-poly-clob", action="store_true", help="Collect public Polymarket BTC 5m CLOB events.")
+    parser.add_argument("--poly-replay", action="store_true", help="Report Polymarket BTC 5m replay validation.")
     parser.add_argument("--discord", action="store_true", help="Send tick results to DISCORD_WEBHOOK_URL.")
     parser.add_argument("--discord-events-only", action="store_true", help="Notify Discord only when a trade event occurs.")
     parser.add_argument("--duration-seconds", type=int, help="Run for this many seconds, then exit.")
@@ -445,6 +447,21 @@ def main() -> None:
             settings.gamma_url,
             settings.market_query,
         )
+        return
+    if args.poly_replay:
+        report = build_replay_report(
+            settings.state_path.parent / "polymarket_btc_5m_clob.jsonl",
+            settings.replay_required_win_rate,
+            settings.replay_min_trades,
+            settings.replay_imbalance_threshold,
+            settings.replay_fee_per_share,
+            settings.state_path.parent / "polymarket_crypto_prices.jsonl",
+        )
+        write_replay_report(settings.state_path.parent / "polymarket_btc_5m_replay.json", report)
+        message = format_replay_report(report)
+        print(message, flush=True)
+        if args.discord:
+            maybe_send_discord(message)
         return
     deadline = datetime.now(UTC) + timedelta(seconds=args.duration_seconds) if args.duration_seconds else None
     while True:

@@ -1,0 +1,11 @@
+[Unit]
+Description=Run RemoteTrade Polymarket BTC 5m replay report hourly
+
+[Timer]
+OnBootSec=10min
+OnUnitActiveSec=1h
+AccuracySec=1min
+Unit=remotetrade-poly-replay.service
+
+[Install]
+WantedBy=timers.target

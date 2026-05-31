@@ -38,6 +38,8 @@ install -m 0644 "$APP_DIR/deploy/systemd/remotetrade-limit-paper.service" /etc/s
 install -m 0644 "$APP_DIR/deploy/systemd/remotetrade-poly-5m.service" /etc/systemd/system/
 install -m 0644 "$APP_DIR/deploy/systemd/remotetrade-poly-rtds.service" /etc/systemd/system/
 install -m 0644 "$APP_DIR/deploy/systemd/remotetrade-poly-clob.service" /etc/systemd/system/
+install -m 0644 "$APP_DIR/deploy/systemd/remotetrade-poly-replay.service" /etc/systemd/system/
+install -m 0644 "$APP_DIR/deploy/systemd/remotetrade-poly-replay.timer" /etc/systemd/system/
 install -m 0644 "$APP_DIR/deploy/systemd/remotetrade-depth-arb.service" /etc/systemd/system/
 install -m 0644 "$APP_DIR/deploy/systemd/remotetrade-depth-arb.timer" /etc/systemd/system/
 install -m 0644 "$APP_DIR/deploy/systemd/remotetrade-backup.service" /etc/systemd/system/
@@ -56,6 +58,7 @@ systemctl enable --now remotetrade-limit-paper.service
 systemctl enable --now remotetrade-poly-5m.service
 systemctl enable --now remotetrade-poly-rtds.service
 systemctl enable --now remotetrade-poly-clob.service
+systemctl enable --now remotetrade-poly-replay.timer
 systemctl enable --now remotetrade-depth-arb.timer
 systemctl enable --now remotetrade-backup.timer
 systemctl enable --now remotetrade-health.timer

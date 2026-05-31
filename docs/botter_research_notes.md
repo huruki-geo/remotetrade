@@ -212,6 +212,28 @@ Phase 2: require evidence.
 
 Phase 3: only then consider small live execution on legally eligible venues.
 
+## C-Class Botter Operating Notes
+
+Reference: QASH_NFT, "Let's become a C-class botter earning 10,000 yen per month with crypto" (2023-12-02):
+https://note.com/qash/n/n11f79a69daad
+
+Useful operating principles from the article:
+
+- Run always-on bots in cloud infrastructure when continuous observation matters.
+- Start with detection bots and manual or very small execution while finding operational errors.
+- Validate exchange-specific contract size, lot size, and API values before allowing an order.
+- Reject implausible zero or out-of-range prices instead of trusting every API response.
+- Use Discord-style alerts for errors and detected opportunities.
+- Build many small experiments because edges can disappear quickly.
+
+Applied here:
+
+- Keep the existing wick, spread, depth-arbitrage, route-arbitrage, and Polymarket lanes independent.
+- Store raw public WebSocket data before optimizing a model.
+- Run hourly replay reports for the Polymarket BTC 5m collector.
+- Treat a `70%` win rate as a validation gate, not a promise. The gate also requires a minimum sample size and positive validation-period PnL.
+- Keep authenticated execution out of scope until paper validation, venue eligibility, value sanity checks, and small-size operational testing exist.
+
 ## Next Implementation Priority
 
 1. Add order book clients for the exchanges. [done]
@@ -231,5 +253,6 @@ Phase 3: only then consider small live execution on legally eligible venues.
 10. Add a same-venue triangular and multi-hop arbitrage scanner.
 11. Add trade-stream collection for wick replay.
 12. Add microstructure and hourly-anomaly features to replay reports.
-13. Add multi-level OFI and trade-aggressor features.
+13. Add multi-level OFI and trade-aggressor features. [initial version done]
 14. Add chronological out-of-sample reports with modeled execution costs.
+   - Polymarket BTC 5m replay now gates on the final chronological 30% with configurable per-share costs. [initial version done]

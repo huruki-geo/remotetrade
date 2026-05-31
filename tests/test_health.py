@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import csv
+import json
 import tempfile
 import unittest
 from datetime import UTC, datetime
@@ -47,6 +48,23 @@ class HealthTest(unittest.TestCase):
         self.assertTrue(report.ok)
         self.assertIn("limit_paper_btc_usd_normal_ticks.csv", report.message)
         self.assertNotIn("limit_paper_ticks.csv", report.message)
+
+    def test_reports_missing_companion_polymarket_stream(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            with (root / "limit_paper_btc_ticks.csv").open("w", newline="", encoding="utf-8") as handle:
+                writer = csv.DictWriter(handle, fieldnames=["time"])
+                writer.writeheader()
+                writer.writerow({"time": datetime.now(UTC).isoformat()})
+            (root / "polymarket_crypto_prices.jsonl").write_text(
+                json.dumps({"received_at": datetime.now(UTC).isoformat()}) + "\n",
+                encoding="utf-8",
+            )
+
+            report = build_health_report(root, max_tick_age_seconds=300, min_free_disk_mb=1)
+
+        self.assertFalse(report.ok)
+        self.assertIn("polymarket_btc_5m_clob.jsonl", report.message)
 
     def test_reports_missing_ticks(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
