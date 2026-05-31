@@ -282,3 +282,42 @@ This is a discovery feed, not a live-order permission.
    - Polymarket BTC 5m replay now gates on the final chronological 30% with configurable per-share costs. [initial version done]
 15. Add VPS low-cost venue discovery.
    - GMO Coin, bitbank, and MEXC research-only public symbol, fee, ticker, status, and order-book discovery runs every five minutes. [initial version done]
+
+## Strategy Selection: "Omae mo botter ni naranai ka?"
+
+Reference: Hoheto, "Omae mo botter ni naranai ka? Cryptocurrency bot revenue methods summary" (2021):
+https://note.com/hht/n/n61e6ecefd059
+
+The article separates bot revenue sources into high-frequency trading, swing trading, arbitrage, wick capture, interest and futures basis, mirror trading, momentum chasing, trend following, and bitFlyer SFD. The best first target for this repo is not every category at once.
+
+Primary research lane:
+
+- Run selective two-sided PostOnly market-making experiments on low-cost spot venues.
+- Prefer markets with a maker rebate, sufficient depth, stable API behavior, and enough trade flow for both sides to fill.
+- Quote a small passive buy and passive sell around a reference price.
+- Treat spread capture and maker rebates as candidate gross edge only.
+- Cancel or skew quotes when short-horizon order-flow features suggest adverse selection.
+- Measure both-side fill rate, single-leg fill rate, emergency hedge cost, inventory age, post-fill adverse move, and net PnL after fees.
+
+Why this lane comes first:
+
+- It matches the VPS low-cost venue discovery feed already running every five minutes.
+- GMO Coin documents public WebSocket books and trades, private order APIs, and spot maker rebates.
+- bitbank documents PostOnly behavior and current maker rebates on supported pairs.
+- Small orders make operational mistakes cheaper while the fill simulator and replay reports mature.
+
+Secondary lanes to preserve:
+
+- Wick capture: keep collecting rare mispricing events because it can complement a market-making lane.
+- Depth-adjusted and route arbitrage: keep as event-driven discovery lanes, but reject routes after fees, slippage, stale quotes, and limited depth.
+- Polymarket BTC 5m: keep as public-data replay research until venue eligibility is confirmed.
+- Interest and futures-basis research: consider later because it needs separate capital, venue-risk, and liquidation-risk accounting.
+
+Do not prioritize:
+
+- Pure millisecond latency races on major overseas venues from a general-purpose VPS.
+- Mirror trading, social-media chasing, or manipulation-like behavior.
+- SFD as the main build target. The article describes a venue-specific historical edge; bitFlyer Lightning FX ended on 2024-03-28 and was replaced by Crypto CFD.
+- Authenticated automatic execution before replay evidence, hard position limits, cancel-all handling, and emergency stop controls exist.
+
+The working hypothesis is narrow: a VPS may support event-driven, selective small-maker experiments, but stable prices do not make the strategy risk-free. Single-leg fills and adverse selection remain the core risks.
