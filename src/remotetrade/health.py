@@ -57,6 +57,17 @@ def build_health_report(data_dir: Path, max_tick_age_seconds: int, min_free_disk
             if age > max_tick_age_seconds * 2:
                 issues.append(f"{discovery_path.name}: discovery is stale ({age:.0f}s ago)")
 
+    maker_probe_path = data_dir / "maker_probe_ticks.csv"
+    if maker_probe_path.exists():
+        latest = _latest_tick_time(maker_probe_path)
+        if latest is None:
+            issues.append(f"{maker_probe_path.name}: no readable probe tick")
+        else:
+            age = (datetime.now(UTC) - latest).total_seconds()
+            lines.append(f"- {maker_probe_path.name}: latest probe `{latest.isoformat(timespec='seconds')}` / {age:.0f}s ago")
+            if age > max_tick_age_seconds:
+                issues.append(f"{maker_probe_path.name}: probe is stale ({age:.0f}s ago)")
+
     usage = shutil.disk_usage(data_dir if data_dir.exists() else Path("."))
     free_mb = usage.free / 1024 / 1024
     lines.append(f"- 空きディスク: `{free_mb:.0f} MB`")

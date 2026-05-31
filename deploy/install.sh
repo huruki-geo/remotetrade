@@ -42,6 +42,7 @@ install -m 0644 "$APP_DIR/deploy/systemd/remotetrade-poly-replay.service" /etc/s
 install -m 0644 "$APP_DIR/deploy/systemd/remotetrade-poly-replay.timer" /etc/systemd/system/
 install -m 0644 "$APP_DIR/deploy/systemd/remotetrade-venue-discovery.service" /etc/systemd/system/
 install -m 0644 "$APP_DIR/deploy/systemd/remotetrade-venue-discovery.timer" /etc/systemd/system/
+install -m 0644 "$APP_DIR/deploy/systemd/remotetrade-maker-probe.service" /etc/systemd/system/
 install -m 0644 "$APP_DIR/deploy/systemd/remotetrade-depth-arb.service" /etc/systemd/system/
 install -m 0644 "$APP_DIR/deploy/systemd/remotetrade-depth-arb.timer" /etc/systemd/system/
 install -m 0644 "$APP_DIR/deploy/systemd/remotetrade-backup.service" /etc/systemd/system/
@@ -62,6 +63,7 @@ systemctl enable --now remotetrade-poly-rtds.service
 systemctl enable --now remotetrade-poly-clob.service
 systemctl enable --now remotetrade-poly-replay.timer
 systemctl enable --now remotetrade-venue-discovery.timer
+systemctl enable --now remotetrade-maker-probe.service
 systemctl enable --now remotetrade-depth-arb.timer
 systemctl enable --now remotetrade-backup.timer
 systemctl enable --now remotetrade-health.timer

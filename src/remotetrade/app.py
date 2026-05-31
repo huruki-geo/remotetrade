@@ -19,6 +19,13 @@ from remotetrade.clients import Candle, CoinbaseClient, PolymarketClient
 from remotetrade.config import Settings
 from remotetrade.health import build_health_report
 from remotetrade.limit_paper import LimitPaperBroker, adapt_limit_parameters, find_limit_candidate
+from remotetrade.maker_probe import (
+    append_maker_probe_observations,
+    build_maker_probe_reports,
+    fetch_maker_probe_observations,
+    format_maker_probe_observations,
+    format_maker_probe_reports,
+)
 from remotetrade.notify import format_discord_error, format_discord_tick, send_discord_message
 from remotetrade.paper import PaperBroker
 from remotetrade.patterns import Pattern, load_patterns
@@ -195,6 +202,12 @@ def run_portfolio_paper_once(settings: Settings) -> list[TickResult]:
         for variant in variants:
             results.append(run_limit_paper_for(settings, product_id, variant, file_suffix(product_id, variant.id)))
     return results
+
+
+def run_maker_probe_once(settings: Settings) -> TickResult:
+    observations = fetch_maker_probe_observations()
+    append_maker_probe_observations(settings.state_path.parent / "maker_probe_ticks.csv", observations)
+    return TickResult("maker_probe", format_maker_probe_observations(observations), "observed")
 
 
 def run_wick_once(settings: Settings, coinbase: CoinbaseClient | None = None) -> TickResult:
@@ -434,6 +447,8 @@ def main() -> None:
     parser.add_argument("--collect-poly-clob", action="store_true", help="Collect public Polymarket BTC 5m CLOB events.")
     parser.add_argument("--poly-replay", action="store_true", help="Report Polymarket BTC 5m replay validation.")
     parser.add_argument("--discover-venues", action="store_true", help="Discover low-cost small-maker markets.")
+    parser.add_argument("--maker-probe", action="store_true", help="Record maker-market top-of-book observations.")
+    parser.add_argument("--maker-probe-report", action="store_true", help="Replay conservative maker-market paper fills.")
     parser.add_argument("--discord", action="store_true", help="Send tick results to DISCORD_WEBHOOK_URL.")
     parser.add_argument("--discord-events-only", action="store_true", help="Notify Discord only when a trade event occurs.")
     parser.add_argument("--duration-seconds", type=int, help="Run for this many seconds, then exit.")
@@ -479,6 +494,12 @@ def main() -> None:
         if args.discord:
             maybe_send_discord(message)
         return
+    if args.maker_probe_report:
+        message = format_maker_probe_reports(build_maker_probe_reports(settings.state_path.parent / "maker_probe_ticks.csv"))
+        print(message, flush=True)
+        if args.discord:
+            maybe_send_discord(message)
+        return
     deadline = datetime.now(UTC) + timedelta(seconds=args.duration_seconds) if args.duration_seconds else None
     while True:
         try:
@@ -513,6 +534,9 @@ def main() -> None:
                 message = "Portfolio paper tick\n" + "\n".join(result.line for result in results)
                 print(message, flush=True)
                 notify_tick("ポートフォリオ紙トレード", results, args.discord, args.discord_events_only)
+            elif args.maker_probe:
+                result = run_maker_probe_once(settings)
+                print(result.line, flush=True)
             elif args.wick:
                 result = run_wick_once(settings)
                 print(result.line, flush=True)
