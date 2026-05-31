@@ -1,0 +1,12 @@
+[Unit]
+Description=RemoteTrade qash-style PancakeSwap route paper probe
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=remotetrade
+Group=remotetrade
+WorkingDirectory=/opt/remotetrade
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/opt/remotetrade/.venv/bin/python -m remotetrade.app --bsc-qash-route-probe --discord

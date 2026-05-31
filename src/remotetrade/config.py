@@ -79,6 +79,9 @@ class Settings:
     dex_rpc_url: str = "https://ethereum-rpc.publicnode.com"
     dex_route_start_usdc: float = 1_000.0
     dex_route_min_net_return_pct: float = 0.001
+    bsc_rpc_url: str = "https://bsc-dataseed.bnbchain.org"
+    bsc_qash_route_start_usdt: float = 1_000.0
+    bsc_qash_route_min_net_return_pct: float = 0.001
     state_path: Path = Path("data/paper_state.json")
     trades_path: Path = Path("data/trades.csv")
     ticks_path: Path = Path("data/ticks.csv")
@@ -156,6 +159,12 @@ class Settings:
             dex_route_min_net_return_pct=env_float(
                 "DEX_ROUTE_MIN_NET_RETURN_PCT",
                 cls.dex_route_min_net_return_pct,
+            ),
+            bsc_rpc_url=os.getenv("BSC_RPC_URL", cls.bsc_rpc_url),
+            bsc_qash_route_start_usdt=env_float("BSC_QASH_ROUTE_START_USDT", cls.bsc_qash_route_start_usdt),
+            bsc_qash_route_min_net_return_pct=env_float(
+                "BSC_QASH_ROUTE_MIN_NET_RETURN_PCT",
+                cls.bsc_qash_route_min_net_return_pct,
             ),
             state_path=Path(os.getenv("STATE_PATH", str(cls.state_path))),
             trades_path=Path(os.getenv("TRADES_PATH", str(cls.trades_path))),

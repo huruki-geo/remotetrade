@@ -17,6 +17,7 @@ from remotetrade.arbitrage import (
 )
 from remotetrade.clients import Candle, CoinbaseClient, PolymarketClient
 from remotetrade.bitbank_route_probe import append_bitbank_route_probe, format_bitbank_route_probe, scan_bitbank_routes
+from remotetrade.bsc_qash_route_probe import append_bsc_qash_route_probe, format_bsc_qash_route_probe, scan_bsc_qash_route
 from remotetrade.config import Settings
 from remotetrade.dex_route_probe import EthereumRpcClient, append_dex_route_probe, format_dex_route_probe, scan_dex_routes
 from remotetrade.health import build_health_report
@@ -453,6 +454,7 @@ def main() -> None:
     parser.add_argument("--maker-probe-report", action="store_true", help="Replay conservative maker-market paper fills.")
     parser.add_argument("--bitbank-route-probe", action="store_true", help="Record paper-only bitbank triangular routes.")
     parser.add_argument("--dex-route-probe", action="store_true", help="Record paper-only allowlisted DEX routes.")
+    parser.add_argument("--bsc-qash-route-probe", action="store_true", help="Record the paper-only qash-style PancakeSwap route.")
     parser.add_argument("--discord", action="store_true", help="Send tick results to DISCORD_WEBHOOK_URL.")
     parser.add_argument("--discord-events-only", action="store_true", help="Notify Discord only when a trade event occurs.")
     parser.add_argument("--duration-seconds", type=int, help="Run for this many seconds, then exit.")
@@ -523,6 +525,18 @@ def main() -> None:
         )
         append_dex_route_probe(settings.state_path.parent / "dex_route_probes.jsonl", probe)
         message = format_dex_route_probe(probe)
+        print(message, flush=True)
+        if args.discord and probe.opportunity:
+            maybe_send_discord(message)
+        return
+    if args.bsc_qash_route_probe:
+        probe = scan_bsc_qash_route(
+            EthereumRpcClient(settings.bsc_rpc_url),
+            start_usdt=settings.bsc_qash_route_start_usdt,
+            min_net_return_pct=settings.bsc_qash_route_min_net_return_pct,
+        )
+        append_bsc_qash_route_probe(settings.state_path.parent / "bsc_qash_route_probes.jsonl", probe)
+        message = format_bsc_qash_route_probe(probe)
         print(message, flush=True)
         if args.discord and probe.opportunity:
             maybe_send_discord(message)
