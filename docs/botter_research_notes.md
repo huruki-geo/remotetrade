@@ -398,3 +398,23 @@ Initial May 31, 2026 observations showed a real but tiny-capacity divergence:
 - `$20`: approximately `-0.24%`
 
 The pool is shallow enough that price impact consumes the edge quickly. This is closer to the article's point than scanning deep mainnet pools: the reason the spread survives is also the reason it is difficult to monetize at size.
+
+## BOBA Zencha StableSwap Probe
+
+The tiny Oolong pool is a useful baseline, but it is not the only BOBA candidate. The QASH article refers to an older Curve fork without naming it. Zencha Finance is a strong public candidate, not a confirmed identification: its archived material describes a BOBA StableSwap for `DAI / USDC / USDT`, and DeFiLlama's adapter points to live `SwapFlashLoan` contract `0x2D027B49B8960810F84D5fE172d07FFf62311852`.
+
+Verify the contract directly before treating it as a candidate:
+
+- Require BOBA chain ID `288`.
+- Read all three token indexes from the Saddle-compatible contract on every scan.
+- Quote Coinbase-anchored `USDC <-> USDT` directions with on-chain `calculateSwap`; retain the DAI balance for later venue-specific expansion.
+- Compare the output to Coinbase stablecoin USD bids and subtract an estimated BOBA transaction cost.
+- Record the full size curve and alert only on a paper candidate.
+
+Initial May 31, 2026 direct RPC observations:
+
+- DeFiLlama reported approximately `$85.9k` protocol TVL.
+- Contract balances were approximately `DAI 59.2k / USDC 8.8k / USDT 16.6k`.
+- `USDC -> USDT` pool-only quotes were approximately `+1.84%` at `$1`, `+1.53%` at `$1,000`, and `+0.57%` at `$5,000`.
+
+The frontend is no longer available and DeFiLlama marks the protocol unaudited. This remains a paper-only observation. Token redemption, bridge status, bridge fees, CEX inventory, and withdrawal availability must be checked separately before any test transaction.

@@ -1,0 +1,11 @@
+[Unit]
+Description=Run RemoteTrade Boba Zencha StableSwap versus CEX paper probe every 5 minutes
+
+[Timer]
+OnBootSec=270s
+OnUnitActiveSec=5min
+AccuracySec=10s
+Unit=remotetrade-boba-zencha-probe.service
+
+[Install]
+WantedBy=timers.target

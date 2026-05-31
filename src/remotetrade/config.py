@@ -86,6 +86,7 @@ class Settings:
     boba_cex_dex_start_usd: float = 10.0
     boba_cex_dex_min_net_return_pct: float = 0.001
     boba_oolong_stable_fee_bps: float = 1.0
+    boba_zencha_min_net_return_pct: float = 0.001
     state_path: Path = Path("data/paper_state.json")
     trades_path: Path = Path("data/trades.csv")
     ticks_path: Path = Path("data/ticks.csv")
@@ -177,6 +178,7 @@ class Settings:
                 cls.boba_cex_dex_min_net_return_pct,
             ),
             boba_oolong_stable_fee_bps=env_float("BOBA_OOLONG_STABLE_FEE_BPS", cls.boba_oolong_stable_fee_bps),
+            boba_zencha_min_net_return_pct=env_float("BOBA_ZENCHA_MIN_NET_RETURN_PCT", cls.boba_zencha_min_net_return_pct),
             state_path=Path(os.getenv("STATE_PATH", str(cls.state_path))),
             trades_path=Path(os.getenv("TRADES_PATH", str(cls.trades_path))),
             ticks_path=Path(os.getenv("TICKS_PATH", str(cls.ticks_path))),
