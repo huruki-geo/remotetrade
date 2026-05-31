@@ -9,6 +9,22 @@ from remotetrade.paper import PaperBroker
 
 
 class PaperBrokerTest(unittest.TestCase):
+    def test_close_position_subtracts_round_trip_cost(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            broker = PaperBroker(
+                root / "state.json",
+                root / "trades.csv",
+                start_cash=300.0,
+                round_trip_cost_bps=120.0,
+            )
+
+            broker.open_position("LONG", 100.0, 100.0, "market", 0.1, "BTC-USD")
+            broker.close_position(101.0, 0.0, "test")
+
+        self.assertAlmostEqual(broker.state.realized_pnl, -0.2)
+        self.assertAlmostEqual(broker.state.cash, 299.8)
+
     def test_append_tick_writes_observation_csv(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

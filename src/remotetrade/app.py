@@ -355,7 +355,13 @@ def run_once(
 ) -> TickResult:
     polymarket = polymarket or PolymarketClient(settings.gamma_url)
     coinbase = coinbase or CoinbaseClient(settings.coinbase_url)
-    broker = PaperBroker(settings.state_path, settings.trades_path, settings.start_cash_usd, settings.ticks_path)
+    broker = PaperBroker(
+        settings.state_path,
+        settings.trades_path,
+        settings.start_cash_usd,
+        settings.ticks_path,
+        settings.spot_paper_round_trip_cost_bps,
+    )
     strategy = PolymarketLeadStrategy(
         settings.entry_threshold,
         settings.strong_threshold,
@@ -495,6 +501,8 @@ def main() -> None:
             settings.replay_imbalance_threshold,
             settings.replay_fee_per_share,
             settings.state_path.parent / "polymarket_crypto_prices.jsonl",
+            settings.replay_max_clob_bytes,
+            settings.replay_max_crypto_price_bytes,
         )
         write_replay_report(settings.state_path.parent / "polymarket_btc_5m_replay.json", report)
         message = format_replay_report(report)

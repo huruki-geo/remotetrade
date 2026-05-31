@@ -70,8 +70,15 @@ def build_replay_report(
     imbalance_threshold: float = 0.20,
     fee_per_share: float = 0.0,
     crypto_prices_path: Path | None = None,
+    max_event_bytes: int | None = None,
+    max_crypto_price_bytes: int | None = None,
 ) -> ReplayReport:
-    features = extract_market_features(path, crypto_prices_path=crypto_prices_path)
+    features = extract_market_features(
+        path,
+        crypto_prices_path=crypto_prices_path,
+        max_event_bytes=max_event_bytes,
+        max_crypto_price_bytes=max_crypto_price_bytes,
+    )
     candidates = replay_imbalance_strategy(features, imbalance_threshold, fee_per_share)
     validation = chronological_validation(candidates)
     wins = sum(candidate.won for candidate in candidates)
@@ -159,11 +166,13 @@ def extract_market_features(
     path: Path,
     levels: int = 5,
     crypto_prices_path: Path | None = None,
+    max_event_bytes: int | None = None,
+    max_crypto_price_bytes: int | None = None,
 ) -> list[MarketFeature]:
     books: dict[tuple[str, str], dict[str, Any]] = {}
-    crypto_prices = _crypto_price_index(crypto_prices_path)
+    crypto_prices = _crypto_price_index(crypto_prices_path, max_crypto_price_bytes)
     features: list[MarketFeature] = []
-    for row in _jsonl_rows(path):
+    for row in _jsonl_rows(path, max_event_bytes):
         market_slug = str(row.get("market_slug") or "")
         received_at = str(row.get("received_at") or "")
         event = row.get("event")
@@ -312,14 +321,21 @@ def _feature_from_book(
     )
 
 
-def _jsonl_rows(path: Path) -> Iterator[dict[str, Any]]:
+def _jsonl_rows(path: Path, max_bytes: int | None = None) -> Iterator[dict[str, Any]]:
     if not path.exists():
         return
-    with path.open(encoding="utf-8") as handle:
+    with path.open("rb") as handle:
+        if max_bytes is not None and max_bytes > 0:
+            size = path.stat().st_size
+            if size > max_bytes:
+                offset = size - max_bytes
+                handle.seek(offset - 1)
+                if handle.read(1) != b"\n":
+                    handle.readline()
         for line in handle:
             try:
-                payload = json.loads(line)
-            except json.JSONDecodeError:
+                payload = json.loads(line.decode("utf-8"))
+            except (UnicodeDecodeError, json.JSONDecodeError):
                 continue
             if isinstance(payload, dict):
                 yield payload
@@ -368,11 +384,11 @@ def _new_book() -> dict[str, Any]:
     }
 
 
-def _crypto_price_index(path: Path | None) -> dict[str, list[tuple[datetime, float]]]:
+def _crypto_price_index(path: Path | None, max_bytes: int | None = None) -> dict[str, list[tuple[datetime, float]]]:
     index: dict[str, list[tuple[datetime, float]]] = {}
     if path is None:
         return index
-    for row in _jsonl_rows(path):
+    for row in _jsonl_rows(path, max_bytes):
         event_time = _datetime_or_none(str(row.get("received_at") or ""))
         price = _float_or_none(row.get("price"))
         source = str(row.get("source") or "")

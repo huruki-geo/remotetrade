@@ -31,10 +31,18 @@ class PaperState:
 
 
 class PaperBroker:
-    def __init__(self, state_path: Path, trades_path: Path, start_cash: float, ticks_path: Path | None = None) -> None:
+    def __init__(
+        self,
+        state_path: Path,
+        trades_path: Path,
+        start_cash: float,
+        ticks_path: Path | None = None,
+        round_trip_cost_bps: float = 0.0,
+    ) -> None:
         self.state_path = state_path
         self.trades_path = trades_path
         self.ticks_path = ticks_path
+        self.round_trip_cost_bps = round_trip_cost_bps
         self.state = self._load_state(start_cash)
 
     def open_position(
@@ -68,7 +76,9 @@ class PaperBroker:
         if position is None:
             return "no_position"
         multiplier = 1.0 if position.side == "LONG" else -1.0
-        pnl = (price - position.entry_price) * position.qty * multiplier
+        gross_pnl = (price - position.entry_price) * position.qty * multiplier
+        round_trip_cost = position.notional_usd * self.round_trip_cost_bps / 10_000
+        pnl = gross_pnl - round_trip_cost
         self.state.cash += pnl
         self.state.realized_pnl += pnl
         self.state.position = None

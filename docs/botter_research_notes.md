@@ -323,6 +323,26 @@ Do not prioritize:
 
 The working hypothesis is narrow: a VPS may support event-driven, selective small-maker experiments, but stable prices do not make the strategy risk-free. Single-leg fills and adverse selection remain the core risks.
 
+## Polymarket-Led Spot Paper Cost Model
+
+The Polymarket-led spot variants use Coinbase BTC spot as a proxy execution price. Treat their raw directional PnL as gross signal research, not executable profit. Deduct a configurable round-trip cost on every close:
+
+```text
+SPOT_PAPER_ROUND_TRIP_COST_BPS=120
+```
+
+The default is deliberately conservative for an immediate taker-taker proxy. Override it only after selecting an actual execution venue and verifying the account-specific fee tier, spread, and slippage. Historical state accumulated before this setting was added remains gross; newly closed positions accumulate net PnL.
+
+Initial May 31, 2026 JST time-of-day inspection found a hypothesis worth collecting, not a proven tradable edge:
+
+- `balanced` gross JST `19:00-23:00`: `24` trades, `66.7%` wins, approximately `+1.09 bps` average.
+- `strong_only` gross JST `19:00-23:00`: `15` trades, `73.3%` wins, approximately `+1.54 bps` average.
+- Both averages turn negative after a hypothetical `2 bps` round-trip cost.
+
+Keep collecting before adding a time gate. Evaluate the same window across multiple days and require positive out-of-sample net expectancy after the selected venue's real costs.
+
+The hourly Polymarket CLOB replay reads capped tails of the growing event and crypto-price JSONL files. This keeps the report viable on the small VPS while preserving recent chronological validation.
+
 ## QASH Arbitrage Research Backlog
 
 References:

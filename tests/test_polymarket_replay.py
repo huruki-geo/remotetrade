@@ -9,6 +9,18 @@ from remotetrade.polymarket_replay import build_replay_report, extract_market_fe
 
 
 class PolymarketReplayTest(unittest.TestCase):
+    def test_can_limit_jsonl_reads_to_recent_bytes(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "events.jsonl"
+            old = _book("old", "up", "2026-05-31T00:00:00+00:00", 0.50, 0.51, 100, 100)
+            recent = _book("recent", "up", "2026-05-31T00:01:00+00:00", 0.50, 0.51, 100, 100)
+            encoded_recent = json.dumps(recent) + "\n"
+            path.write_text(json.dumps(old) + "\n" + encoded_recent, encoding="utf-8")
+
+            features = extract_market_features(path, max_event_bytes=len(encoded_recent.encode("utf-8")) + 1)
+
+        self.assertEqual([feature.market_slug for feature in features], ["recent"])
+
     def test_extracts_multi_level_imbalance_and_passes_gate(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "events.jsonl"

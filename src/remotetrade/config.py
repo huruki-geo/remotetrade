@@ -45,6 +45,7 @@ class Settings:
     max_trade_size_usd: float = 30.0
     min_trade_size_usd: float = 10.0
     start_cash_usd: float = 300.0
+    spot_paper_round_trip_cost_bps: float = 120.0
     arbitrage_notional_usd: float = 100.0
     arbitrage_fee_bps: float = 20.0
     arbitrage_min_net_spread_pct: float = 0.001
@@ -69,6 +70,8 @@ class Settings:
     replay_min_trades: int = 30
     replay_imbalance_threshold: float = 0.20
     replay_fee_per_share: float = 0.0
+    replay_max_clob_bytes: int = 8_000_000
+    replay_max_crypto_price_bytes: int = 8_000_000
     discovery_max_order_notional_jpy: float = 2_000.0
     discovery_max_order_notional_usdt: float = 20.0
     discovery_min_depth_jpy: float = 10_000.0
@@ -116,6 +119,10 @@ class Settings:
             max_trade_size_usd=env_float("MAX_TRADE_SIZE_USD", cls.max_trade_size_usd),
             min_trade_size_usd=env_float("MIN_TRADE_SIZE_USD", cls.min_trade_size_usd),
             start_cash_usd=env_float("START_CASH_USD", cls.start_cash_usd),
+            spot_paper_round_trip_cost_bps=env_float(
+                "SPOT_PAPER_ROUND_TRIP_COST_BPS",
+                cls.spot_paper_round_trip_cost_bps,
+            ),
             arbitrage_notional_usd=env_float("ARBITRAGE_NOTIONAL_USD", cls.arbitrage_notional_usd),
             arbitrage_fee_bps=env_float("ARBITRAGE_FEE_BPS", cls.arbitrage_fee_bps),
             arbitrage_min_net_spread_pct=env_float(
@@ -146,6 +153,11 @@ class Settings:
             replay_min_trades=env_int("REPLAY_MIN_TRADES", cls.replay_min_trades),
             replay_imbalance_threshold=env_float("REPLAY_IMBALANCE_THRESHOLD", cls.replay_imbalance_threshold),
             replay_fee_per_share=env_float("REPLAY_FEE_PER_SHARE", cls.replay_fee_per_share),
+            replay_max_clob_bytes=env_int("REPLAY_MAX_CLOB_BYTES", cls.replay_max_clob_bytes),
+            replay_max_crypto_price_bytes=env_int(
+                "REPLAY_MAX_CRYPTO_PRICE_BYTES",
+                cls.replay_max_crypto_price_bytes,
+            ),
             discovery_max_order_notional_jpy=env_float(
                 "DISCOVERY_MAX_ORDER_NOTIONAL_JPY",
                 cls.discovery_max_order_notional_jpy,
