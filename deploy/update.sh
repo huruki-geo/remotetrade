@@ -53,24 +53,20 @@ systemctl daemon-reload
 systemctl enable remotetrade-poly-5m.service
 systemctl enable remotetrade-poly-rtds.service
 systemctl enable remotetrade-poly-clob.service
-systemctl enable remotetrade-poly-replay.timer
-systemctl enable remotetrade-venue-discovery.timer
-systemctl enable remotetrade-bitbank-route-probe.timer
-systemctl enable remotetrade-dex-route-probe.timer
+systemctl enable --now remotetrade-poly-replay.timer
+systemctl enable --now remotetrade-venue-discovery.timer
+systemctl enable --now remotetrade-bitbank-route-probe.timer
+systemctl enable --now remotetrade-dex-route-probe.timer
+systemctl enable --now remotetrade-depth-arb.timer
+systemctl enable --now remotetrade-backup.timer
+systemctl enable --now remotetrade-health.timer
+systemctl enable --now remotetrade-report.timer
+systemctl enable --now remotetrade-update.timer
 systemctl enable remotetrade-maker-probe.service
 systemctl restart "$SERVICE"
 systemctl restart remotetrade-poly-5m.service
 systemctl restart remotetrade-poly-rtds.service
 systemctl restart remotetrade-poly-clob.service
-systemctl restart remotetrade-poly-replay.timer
-systemctl restart remotetrade-venue-discovery.timer
-systemctl restart remotetrade-bitbank-route-probe.timer
-systemctl restart remotetrade-dex-route-probe.timer
 systemctl restart remotetrade-maker-probe.service
-systemctl restart remotetrade-depth-arb.timer
-systemctl restart remotetrade-backup.timer
-systemctl restart remotetrade-health.timer
-systemctl restart remotetrade-report.timer
-systemctl restart remotetrade-update.timer
 
 echo "remotetrade updated to $REMOTE"
