@@ -234,6 +234,30 @@ Applied here:
 - Treat a `70%` win rate as a validation gate, not a promise. The gate also requires a minimum sample size and positive validation-period PnL.
 - Keep authenticated execution out of scope until paper validation, venue eligibility, value sanity checks, and small-size operational testing exist.
 
+## Low-Cost Venue Discovery
+
+The VPS should discover small-maker candidates continuously instead of relying on a static exchange list.
+
+Initial supported discovery venues: GMO Coin and bitbank spot markets, plus MEXC public-market research.
+
+- GMO Coin publishes unauthenticated symbol rules, tickers, order books, and trades.
+- Its symbol rules include current minimum order size, price tick, maker fee, and taker fee.
+- Current GMO Coin spot fees are maker `-0.01%` and taker `0.05%` for BTC, ETH, XRP, and DAI. Other spot symbols are maker `-0.03%` and taker `0.09%`.
+- GMO Coin supports public and private WebSocket APIs. Its documented Tier 1 private API limit is `20req/s` for GET and `20req/s` for POST.
+- bitbank documents PostOnly orders and publishes current pair fees, minimum amounts, status, tickers, and books through public APIs. Many pairs currently use a maker rebate of `-0.02%`.
+- MEXC publishes spot symbols, public commission fields, and all best bid / ask tickers through public REST APIs. Store these rows as `mexc_research`: MEXC's published zero-fee promotions can exclude API users, so account-specific API fees must be verified before any order placement.
+
+The initial VPS collector runs every five minutes and stores:
+
+- Live spread in basis points.
+- Current maker and taker fees from the venue API.
+- Maker and taker round-trip edge estimates.
+- Minimum order notional in the venue quote asset.
+- Top-level bid and ask depth.
+- Eligibility for a configured small-order budget, minimum depth, and maximum-spread sanity gate.
+
+This is a discovery feed, not a live-order permission.
+
 ## Next Implementation Priority
 
 1. Add order book clients for the exchanges. [done]
@@ -256,3 +280,5 @@ Applied here:
 13. Add multi-level OFI and trade-aggressor features. [initial version done]
 14. Add chronological out-of-sample reports with modeled execution costs.
    - Polymarket BTC 5m replay now gates on the final chronological 30% with configurable per-share costs. [initial version done]
+15. Add VPS low-cost venue discovery.
+   - GMO Coin, bitbank, and MEXC research-only public symbol, fee, ticker, status, and order-book discovery runs every five minutes. [initial version done]

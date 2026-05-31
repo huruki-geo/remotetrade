@@ -46,6 +46,17 @@ def build_health_report(data_dir: Path, max_tick_age_seconds: int, min_free_disk
             if age > max_tick_age_seconds:
                 issues.append(f"{path.name}: stream event is stale ({age:.0f}s ago)")
 
+    discovery_path = data_dir / "venue_market_discoveries.jsonl"
+    if discovery_path.exists():
+        latest = _latest_jsonl_time(discovery_path)
+        if latest is None:
+            issues.append(f"{discovery_path.name}: no readable discovery event")
+        else:
+            age = (datetime.now(UTC) - latest).total_seconds()
+            lines.append(f"- {discovery_path.name}: latest discovery `{latest.isoformat(timespec='seconds')}` / {age:.0f}s ago")
+            if age > max_tick_age_seconds * 2:
+                issues.append(f"{discovery_path.name}: discovery is stale ({age:.0f}s ago)")
+
     usage = shutil.disk_usage(data_dir if data_dir.exists() else Path("."))
     free_mb = usage.free / 1024 / 1024
     lines.append(f"- 空きディスク: `{free_mb:.0f} MB`")
@@ -90,7 +101,7 @@ def _latest_jsonl_time(path: Path) -> datetime | None:
         for line in handle:
             try:
                 payload = json.loads(line)
-                raw = payload.get("received_at") or ""
+                raw = payload.get("received_at") or payload.get("observed_at") or ""
                 value = datetime.fromisoformat(raw.replace("Z", "+00:00"))
             except (json.JSONDecodeError, AttributeError, ValueError):
                 continue

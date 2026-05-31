@@ -74,5 +74,26 @@ class HealthTest(unittest.TestCase):
         self.assertIn("tickファイルがありません", report.message)
 
 
+    def test_accepts_recent_venue_discovery_observed_at(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            with (root / "limit_paper_ticks.csv").open("w", newline="", encoding="utf-8") as handle:
+                writer = csv.DictWriter(handle, fieldnames=["time"])
+                writer.writeheader()
+                writer.writerow({"time": "2026-05-28T00:00:00+00:00"})
+            (root / "venue_market_discoveries.jsonl").write_text(
+                json.dumps({"observed_at": "2026-05-28T00:00:00+00:00"}) + "\n",
+                encoding="utf-8",
+            )
+
+            with patch("remotetrade.health.datetime") as mock_datetime:
+                mock_datetime.now.return_value = datetime(2026, 5, 28, 0, 1, tzinfo=UTC)
+                mock_datetime.fromisoformat.side_effect = datetime.fromisoformat
+                report = build_health_report(root, max_tick_age_seconds=300, min_free_disk_mb=1)
+
+        self.assertTrue(report.ok)
+        self.assertIn("venue_market_discoveries.jsonl", report.message)
+
+
 if __name__ == "__main__":
     unittest.main()

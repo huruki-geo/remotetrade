@@ -69,6 +69,11 @@ class Settings:
     replay_min_trades: int = 30
     replay_imbalance_threshold: float = 0.20
     replay_fee_per_share: float = 0.0
+    discovery_max_order_notional_jpy: float = 2_000.0
+    discovery_max_order_notional_usdt: float = 20.0
+    discovery_min_depth_jpy: float = 10_000.0
+    discovery_min_depth_usdt: float = 100.0
+    discovery_max_spread_bps: float = 500.0
     state_path: Path = Path("data/paper_state.json")
     trades_path: Path = Path("data/trades.csv")
     ticks_path: Path = Path("data/ticks.csv")
@@ -125,6 +130,17 @@ class Settings:
             replay_min_trades=env_int("REPLAY_MIN_TRADES", cls.replay_min_trades),
             replay_imbalance_threshold=env_float("REPLAY_IMBALANCE_THRESHOLD", cls.replay_imbalance_threshold),
             replay_fee_per_share=env_float("REPLAY_FEE_PER_SHARE", cls.replay_fee_per_share),
+            discovery_max_order_notional_jpy=env_float(
+                "DISCOVERY_MAX_ORDER_NOTIONAL_JPY",
+                cls.discovery_max_order_notional_jpy,
+            ),
+            discovery_max_order_notional_usdt=env_float(
+                "DISCOVERY_MAX_ORDER_NOTIONAL_USDT",
+                cls.discovery_max_order_notional_usdt,
+            ),
+            discovery_min_depth_jpy=env_float("DISCOVERY_MIN_DEPTH_JPY", cls.discovery_min_depth_jpy),
+            discovery_min_depth_usdt=env_float("DISCOVERY_MIN_DEPTH_USDT", cls.discovery_min_depth_usdt),
+            discovery_max_spread_bps=env_float("DISCOVERY_MAX_SPREAD_BPS", cls.discovery_max_spread_bps),
             state_path=Path(os.getenv("STATE_PATH", str(cls.state_path))),
             trades_path=Path(os.getenv("TRADES_PATH", str(cls.trades_path))),
             ticks_path=Path(os.getenv("TICKS_PATH", str(cls.ticks_path))),

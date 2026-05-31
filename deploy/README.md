@@ -30,6 +30,7 @@ journalctl -u remotetrade-poly-5m.service -f
 journalctl -u remotetrade-poly-rtds.service -f
 journalctl -u remotetrade-poly-clob.service -f
 journalctl -u remotetrade-poly-replay.service -n 50 --no-pager
+journalctl -u remotetrade-venue-discovery.service -n 50 --no-pager
 journalctl -u remotetrade-limit-paper.service -f
 systemctl list-timers 'remotetrade-*'
 systemctl restart remotetrade-limit-paper.service
@@ -72,6 +73,14 @@ python -m remotetrade.app --poly-replay --discord
 ```
 
 The default gate requires at least `30` trades, a positive validation-period PnL, and a validation win rate of at least `70%`.
+
+The venue discovery timer checks low-cost GMO Coin, bitbank, and MEXC research markets every five minutes:
+
+```bash
+python -m remotetrade.app --discover-venues
+```
+
+It stores current fees, minimum order notionals, spreads, and top-of-book depth in `data/venue_market_discoveries.jsonl`. MEXC results are research-only until the API account's actual fees and venue eligibility are confirmed.
 
 The depth arbitrage guard runs every 5 minutes.
 

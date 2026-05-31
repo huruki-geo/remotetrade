@@ -1,0 +1,11 @@
+[Unit]
+Description=Run RemoteTrade low-cost venue market discovery every 5 minutes
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=5min
+AccuracySec=10s
+Unit=remotetrade-venue-discovery.service
+
+[Install]
+WantedBy=timers.target

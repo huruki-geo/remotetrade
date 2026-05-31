@@ -31,6 +31,7 @@ from remotetrade.spread import SpreadPaperBroker, best_spread_snapshot, decide_s
 from remotetrade.stock_app import run_stock_patterns_once
 from remotetrade.strategy import PolymarketLeadStrategy
 from remotetrade.variants import LimitPaperVariant, file_suffix, load_limit_paper_variants
+from remotetrade.venue_discovery import append_market_discoveries, format_market_discoveries, scan_low_cost_markets
 from remotetrade.wick import WickReversalStrategy, detect_wick_signal
 
 
@@ -432,6 +433,7 @@ def main() -> None:
     parser.add_argument("--collect-poly-rtds", action="store_true", help="Collect public Polymarket RTDS crypto prices.")
     parser.add_argument("--collect-poly-clob", action="store_true", help="Collect public Polymarket BTC 5m CLOB events.")
     parser.add_argument("--poly-replay", action="store_true", help="Report Polymarket BTC 5m replay validation.")
+    parser.add_argument("--discover-venues", action="store_true", help="Discover low-cost small-maker markets.")
     parser.add_argument("--discord", action="store_true", help="Send tick results to DISCORD_WEBHOOK_URL.")
     parser.add_argument("--discord-events-only", action="store_true", help="Notify Discord only when a trade event occurs.")
     parser.add_argument("--duration-seconds", type=int, help="Run for this many seconds, then exit.")
@@ -459,6 +461,20 @@ def main() -> None:
         )
         write_replay_report(settings.state_path.parent / "polymarket_btc_5m_replay.json", report)
         message = format_replay_report(report)
+        print(message, flush=True)
+        if args.discord:
+            maybe_send_discord(message)
+        return
+    if args.discover_venues:
+        discoveries = scan_low_cost_markets(
+            max_order_notional_jpy=settings.discovery_max_order_notional_jpy,
+            max_order_notional_usdt=settings.discovery_max_order_notional_usdt,
+            min_depth_jpy=settings.discovery_min_depth_jpy,
+            min_depth_usdt=settings.discovery_min_depth_usdt,
+            max_spread_bps=settings.discovery_max_spread_bps,
+        )
+        append_market_discoveries(settings.state_path.parent / "venue_market_discoveries.jsonl", discoveries)
+        message = format_market_discoveries(discoveries)
         print(message, flush=True)
         if args.discord:
             maybe_send_discord(message)
