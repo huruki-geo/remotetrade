@@ -51,8 +51,13 @@ class ReplayReport:
     validation_wins: int
     validation_win_rate: float
     validation_pnl_per_share: float
+    validation_average_pnl_per_share: float
     pnl_per_share: float
     average_pnl_per_share: float
+    average_win_per_share: float
+    average_loss_per_share: float
+    profit_factor: float | None
+    max_drawdown_per_share: float
     passed: bool
     required_win_rate: float
     min_trades: int
@@ -77,6 +82,8 @@ def build_replay_report(
     validation_pnl = sum(candidate.pnl_per_share for candidate in validation)
     validation_trades = len(validation)
     validation_win_rate = validation_wins / validation_trades if validation_trades else 0.0
+    winning_pnls = [candidate.pnl_per_share for candidate in candidates if candidate.pnl_per_share > 0]
+    losing_pnls = [candidate.pnl_per_share for candidate in candidates if candidate.pnl_per_share <= 0]
     return ReplayReport(
         feature_rows=len(features),
         trades=trades,
@@ -86,12 +93,16 @@ def build_replay_report(
         validation_wins=validation_wins,
         validation_win_rate=validation_win_rate,
         validation_pnl_per_share=validation_pnl,
+        validation_average_pnl_per_share=validation_pnl / validation_trades if validation_trades else 0.0,
         pnl_per_share=pnl,
         average_pnl_per_share=pnl / trades if trades else 0.0,
+        average_win_per_share=_average(winning_pnls),
+        average_loss_per_share=_average(losing_pnls),
+        profit_factor=_profit_factor(winning_pnls, losing_pnls),
+        max_drawdown_per_share=_max_drawdown(candidates),
         passed=(
             trades >= min_trades
             and validation_trades > 0
-            and validation_win_rate >= required_win_rate
             and validation_pnl > 0
         ),
         required_win_rate=required_win_rate,
@@ -100,20 +111,48 @@ def build_replay_report(
 
 
 def format_replay_report(report: ReplayReport) -> str:
-    status = "PASS" if report.passed else "REJECT"
+    status = "PASS" if report.passed else "COLLECTING" if report.trades < report.min_trades else "REJECT"
     return "\n".join(
         [
             "**Polymarket BTC 5m replay**",
             f"- status: `{status}`",
             f"- feature rows: `{report.feature_rows}`",
             f"- trades: `{report.trades}` / wins: `{report.wins}`",
-            f"- win rate: `{report.win_rate:.2%}` / required: `{report.required_win_rate:.2%}`",
+            f"- win rate: `{report.win_rate:.2%}` / reference: `{report.required_win_rate:.2%}`",
             f"- validation trades: `{report.validation_trades}` / wins: `{report.validation_wins}`",
-            f"- validation win rate: `{report.validation_win_rate:.2%}` / pnl: `{report.validation_pnl_per_share:+.4f}`",
+            f"- validation win rate: `{report.validation_win_rate:.2%}` / pnl: `{report.validation_pnl_per_share:+.4f}` "
+            f"/ average: `{report.validation_average_pnl_per_share:+.4f}`",
             f"- pnl per share: `{report.pnl_per_share:+.4f}` / average: `{report.average_pnl_per_share:+.4f}`",
+            f"- average win: `{report.average_win_per_share:+.4f}` / average loss: `{report.average_loss_per_share:+.4f}`",
+            f"- profit factor: `{_format_profit_factor(report.profit_factor)}` "
+            f"/ max drawdown: `{report.max_drawdown_per_share:+.4f}`",
             f"- minimum trades: `{report.min_trades}`",
         ]
     )
+
+
+def _average(values: list[float]) -> float:
+    return sum(values) / len(values) if values else 0.0
+
+
+def _profit_factor(wins: list[float], losses: list[float]) -> float | None:
+    gross_loss = -sum(losses)
+    return sum(wins) / gross_loss if gross_loss > 0 else None
+
+
+def _format_profit_factor(value: float | None) -> str:
+    return "n/a" if value is None else f"{value:.2f}"
+
+
+def _max_drawdown(candidates: list[ReplayCandidate]) -> float:
+    equity = 0.0
+    peak = 0.0
+    max_drawdown = 0.0
+    for candidate in sorted(candidates, key=lambda item: item.time):
+        equity += candidate.pnl_per_share
+        peak = max(peak, equity)
+        max_drawdown = min(max_drawdown, equity - peak)
+    return max_drawdown
 
 
 def extract_market_features(

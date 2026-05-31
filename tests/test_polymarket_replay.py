@@ -5,7 +5,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from remotetrade.polymarket_replay import build_replay_report, extract_market_features
+from remotetrade.polymarket_replay import build_replay_report, extract_market_features, format_replay_report
 
 
 class PolymarketReplayTest(unittest.TestCase):
@@ -48,6 +48,32 @@ class PolymarketReplayTest(unittest.TestCase):
             report = build_replay_report(path, required_win_rate=0.70, min_trades=30)
 
         self.assertFalse(report.passed)
+        self.assertIn("status: `COLLECTING`", format_replay_report(report))
+
+    def test_accepts_positive_validation_expectancy_with_low_win_rate(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "events.jsonl"
+            path.write_text(
+                "\n".join(
+                    json.dumps(row)
+                    for row in [
+                        _book("m1", "up", "2026-05-31T00:00:00+00:00", 0.50, 0.51, 300, 50),
+                        _book("m1", "up", "2026-05-31T00:01:00+00:00", 0.39, 0.41, 100, 100),
+                        _book("m2", "up", "2026-05-31T00:02:00+00:00", 0.50, 0.51, 300, 50),
+                        _book("m2", "up", "2026-05-31T00:03:00+00:00", 0.39, 0.41, 100, 100),
+                        _book("m3", "up", "2026-05-31T00:04:00+00:00", 0.50, 0.51, 300, 50),
+                        _book("m3", "up", "2026-05-31T00:05:00+00:00", 0.89, 0.91, 100, 100),
+                    ]
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+
+            report = build_replay_report(path, required_win_rate=0.70, min_trades=3)
+
+        self.assertEqual(report.win_rate, 1 / 3)
+        self.assertGreater(report.validation_pnl_per_share, 0)
+        self.assertTrue(report.passed)
 
     def test_applies_price_change_to_existing_book(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

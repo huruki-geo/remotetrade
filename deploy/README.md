@@ -72,7 +72,7 @@ The hourly replay report applies the configured validation gate:
 python -m remotetrade.app --poly-replay --discord
 ```
 
-The default gate requires at least `30` trades, a positive validation-period PnL, and a validation win rate of at least `70%`.
+The default gate requires at least `30` trades and a positive validation-period PnL. Win rate remains visible as a reference metric so asymmetric payoff strategies are not rejected solely for winning less often.
 
 The venue discovery timer checks low-cost GMO Coin, bitbank, and MEXC research markets every five minutes:
 
