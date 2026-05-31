@@ -8,4 +8,4 @@ Type=oneshot
 User=root
 Group=root
 WorkingDirectory=/opt/remotetrade
-ExecStart=/opt/remotetrade/deploy/update.sh
+ExecStart=/usr/bin/bash /opt/remotetrade/deploy/update.sh

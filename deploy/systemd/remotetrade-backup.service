@@ -6,4 +6,4 @@ Type=oneshot
 User=root
 Group=root
 WorkingDirectory=/opt/remotetrade
-ExecStart=/opt/remotetrade/deploy/backup-data.sh
+ExecStart=/usr/bin/bash /opt/remotetrade/deploy/backup-data.sh
