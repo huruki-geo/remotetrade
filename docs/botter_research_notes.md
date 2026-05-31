@@ -460,4 +460,10 @@ USDC -> USDT(pool A) -> USDC(pool B)
 
 Quote every ordered pool pair and size bucket at one BOBA block. Exclude legacy `nUSD` and the non-canonical symbol-only DAI contracts from route construction. Record estimated gas for both swaps.
 
+The Oolong factory exposes additional allowlisted `USDC / WETH`, `USDT / WETH`, and `WBTC / WETH` pools. Include the volatile pools conservatively at the configured fee assumption and search two-to-four-hop cycles such as:
+
+```text
+USDC -> WETH(Oolong) -> USDT(Oolong) -> USDC(Zencha)
+```
+
 This is still paper-only. Multi-pool atomic execution needs a separately audited executor contract with minimum-profit enforcement. Executor overhead, failed transactions, pool-state contention, and MEV remain unmodeled.

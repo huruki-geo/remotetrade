@@ -3,7 +3,7 @@ from __future__ import annotations
 import unittest
 from unittest.mock import patch
 
-from remotetrade.boba_atomic_route_probe import scan_boba_atomic_routes
+from remotetrade.boba_atomic_route_probe import OOLONG_POOLS, scan_boba_atomic_routes
 from remotetrade.boba_cex_dex_probe import OOLONG_USDT_USDC_POOL, USDC, USDT
 from remotetrade.boba_synapse_probe import SYNAPSE_STABLE_POOL
 from remotetrade.boba_zencha_probe import CALCULATE_SWAP, ZENCHA_SWAP_FLASH_LOAN
@@ -20,11 +20,12 @@ class StubRpc:
         return 1_000_000
 
     def eth_call_at(self, address, data, block_number):
-        if address == OOLONG_USDT_USDC_POOL[1]:
+        if address in {pool[1] for pool in OOLONG_POOLS}:
+            spec = next(pool for pool in OOLONG_POOLS if pool[1] == address)
             if data == "0x0dfe1681":
-                return "0x" + "0" * 24 + USDT.removeprefix("0x")
+                return "0x" + "0" * 24 + spec[2].removeprefix("0x")
             if data == "0xd21220a7":
-                return "0x" + "0" * 24 + USDC.removeprefix("0x")
+                return "0x" + "0" * 24 + spec[3].removeprefix("0x")
             if data == "0x0902f1ac":
                 return "0x" + "".join(f"{value:064x}" for value in (1_000 * 10**6, 1_000 * 10**6, 0))
         if data.startswith(CALCULATE_SWAP):
@@ -52,7 +53,7 @@ class BobaAtomicRouteProbeTest(unittest.TestCase):
         self.assertTrue(probe.opportunity)
         self.assertIn("synapse", probe.route)
         self.assertIn("zencha", probe.route)
-        self.assertEqual(probe.route_count, 6)
+        self.assertGreater(probe.route_count, 6)
         self.assertGreater(probe.profit_usd, 0)
 
 

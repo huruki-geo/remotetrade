@@ -76,6 +76,7 @@ class EthereumRpcClient:
         self.url = url
         self.timeout = timeout
         self.request_id = 0
+        self.session = requests.Session()
 
     def chain_id(self) -> int:
         return int(self.call("eth_chainId", []), 16)
@@ -91,7 +92,7 @@ class EthereumRpcClient:
 
     def call(self, method: str, params: list[Any]) -> Any:
         self.request_id += 1
-        response = requests.post(
+        response = self.session.post(
             self.url,
             json={"jsonrpc": "2.0", "id": self.request_id, "method": method, "params": params},
             timeout=self.timeout,

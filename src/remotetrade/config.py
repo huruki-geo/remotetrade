@@ -86,6 +86,7 @@ class Settings:
     boba_cex_dex_start_usd: float = 10.0
     boba_cex_dex_min_net_return_pct: float = 0.001
     boba_oolong_stable_fee_bps: float = 1.0
+    boba_oolong_volatile_fee_bps: float = 30.0
     boba_zencha_min_net_return_pct: float = 0.001
     boba_synapse_min_net_return_pct: float = 0.001
     boba_atomic_route_min_net_return_pct: float = 0.001
@@ -180,6 +181,7 @@ class Settings:
                 cls.boba_cex_dex_min_net_return_pct,
             ),
             boba_oolong_stable_fee_bps=env_float("BOBA_OOLONG_STABLE_FEE_BPS", cls.boba_oolong_stable_fee_bps),
+            boba_oolong_volatile_fee_bps=env_float("BOBA_OOLONG_VOLATILE_FEE_BPS", cls.boba_oolong_volatile_fee_bps),
             boba_zencha_min_net_return_pct=env_float("BOBA_ZENCHA_MIN_NET_RETURN_PCT", cls.boba_zencha_min_net_return_pct),
             boba_synapse_min_net_return_pct=env_float("BOBA_SYNAPSE_MIN_NET_RETURN_PCT", cls.boba_synapse_min_net_return_pct),
             boba_atomic_route_min_net_return_pct=env_float(

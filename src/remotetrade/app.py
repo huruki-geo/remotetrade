@@ -575,7 +575,8 @@ def main() -> None:
         probe = scan_boba_atomic_routes(
             EthereumRpcClient(settings.boba_rpc_url),
             min_net_return_pct=settings.boba_atomic_route_min_net_return_pct,
-            oolong_fee_bps=settings.boba_oolong_stable_fee_bps,
+            oolong_stable_fee_bps=settings.boba_oolong_stable_fee_bps,
+            oolong_volatile_fee_bps=settings.boba_oolong_volatile_fee_bps,
             coinbase_url=settings.coinbase_url,
         )
         append_boba_atomic_route_probe(settings.state_path.parent / "boba_atomic_route_probes.jsonl", probe)
