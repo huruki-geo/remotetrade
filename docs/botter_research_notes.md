@@ -420,3 +420,20 @@ Initial May 31, 2026 direct RPC observations:
 The frontend is no longer available and DeFiLlama marks the protocol unaudited. This remains a paper-only observation. Token redemption, bridge status, bridge fees, CEX inventory, and withdrawal availability must be checked separately before any test transaction.
 
 The five-minute timer records every quote, but repeated observations of an untouched spread are not repeated profits. Use `python -m remotetrade.app --boba-zencha-report` to count independent episodes. A new episode requires a candidate to disappear and return, or a gap of more than ten minutes. Discord alerts fire on candidate appearance or reappearance rather than every timer tick.
+
+### Zencha Live Canary
+
+Live execution is deliberately separate from the paper timer. Create a dedicated wallet, fund only the canary amount and gas, then preflight:
+
+```bash
+python -m remotetrade.zencha_live --create-wallet
+python -m remotetrade.zencha_live --preflight --amount-usdc 10
+```
+
+The dedicated CLI refuses amounts above `$10 USDC`, reads the private key only from `secrets/zencha_wallet.key`, requires restrictive file permissions on Linux, checks BOBA chain ID `288`, verifies balances, calculates the live quote, applies a slippage floor, and waits for successful approval and swap receipts. Execution remains manual:
+
+```bash
+python -m remotetrade.zencha_live --execute --amount-usdc 10 --confirm EXECUTE_ZENCHA_CANARY
+```
+
+Do not fund the canary wallet until its address has been backed up and the BOBA token contracts, bridge route, and recovery plan have been checked independently.
