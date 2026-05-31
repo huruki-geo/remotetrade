@@ -1,0 +1,13 @@
+[Unit]
+Description=RemoteTrade Boba cross-pool atomic route paper probe
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=remotetrade
+Group=remotetrade
+WorkingDirectory=/opt/remotetrade
+Environment=PYTHONUNBUFFERED=1
+TimeoutStartSec=4min
+ExecStart=/opt/remotetrade/.venv/bin/python -m remotetrade.app --boba-atomic-route-probe

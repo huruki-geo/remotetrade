@@ -449,3 +449,15 @@ Initial May 31, 2026 direct RPC observations:
 - Price impact consumed the edge quickly: the observed maximum was approximately `+$0.25` around `$20`.
 
 This pool is useful as another BOBA replenishment signal, not as a standalone target for new bridge costs. Never treat apparent `nUSD` routes as USD arbitrage without independently proving redemption.
+
+## BOBA Cross-Pool Atomic Route Probe
+
+The CEX-DEX probes are baselines. A more qash-style search compares multiple pools on the same chain and looks for routes that can close within one transaction. Monitor allowlisted BOBA `USDC / USDT` cycles across Zencha, Synapse, and Oolong:
+
+```text
+USDC -> USDT(pool A) -> USDC(pool B)
+```
+
+Quote every ordered pool pair and size bucket at one BOBA block. Exclude legacy `nUSD` and the non-canonical symbol-only DAI contracts from route construction. Record estimated gas for both swaps.
+
+This is still paper-only. Multi-pool atomic execution needs a separately audited executor contract with minimum-profit enforcement. Executor overhead, failed transactions, pool-state contention, and MEV remain unmodeled.
