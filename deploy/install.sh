@@ -35,6 +35,9 @@ fi
 chown -R "$SERVICE_USER:$SERVICE_USER" "$APP_DIR"
 
 install -m 0644 "$APP_DIR/deploy/systemd/remotetrade-limit-paper.service" /etc/systemd/system/
+install -m 0644 "$APP_DIR/deploy/systemd/remotetrade-poly-5m.service" /etc/systemd/system/
+install -m 0644 "$APP_DIR/deploy/systemd/remotetrade-poly-rtds.service" /etc/systemd/system/
+install -m 0644 "$APP_DIR/deploy/systemd/remotetrade-poly-clob.service" /etc/systemd/system/
 install -m 0644 "$APP_DIR/deploy/systemd/remotetrade-depth-arb.service" /etc/systemd/system/
 install -m 0644 "$APP_DIR/deploy/systemd/remotetrade-depth-arb.timer" /etc/systemd/system/
 install -m 0644 "$APP_DIR/deploy/systemd/remotetrade-backup.service" /etc/systemd/system/
@@ -50,6 +53,9 @@ chmod +x "$APP_DIR/deploy/update.sh"
 
 systemctl daemon-reload
 systemctl enable --now remotetrade-limit-paper.service
+systemctl enable --now remotetrade-poly-5m.service
+systemctl enable --now remotetrade-poly-rtds.service
+systemctl enable --now remotetrade-poly-clob.service
 systemctl enable --now remotetrade-depth-arb.timer
 systemctl enable --now remotetrade-backup.timer
 systemctl enable --now remotetrade-health.timer

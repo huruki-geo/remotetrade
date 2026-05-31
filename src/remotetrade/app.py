@@ -22,6 +22,8 @@ from remotetrade.limit_paper import LimitPaperBroker, adapt_limit_parameters, fi
 from remotetrade.notify import format_discord_error, format_discord_tick, send_discord_message
 from remotetrade.paper import PaperBroker
 from remotetrade.patterns import Pattern, load_patterns
+from remotetrade.polymarket_clob import collect_btc_5m_market_events
+from remotetrade.polymarket_rtds import collect_crypto_prices
 from remotetrade.profit_guard import best_depth_arbitrage
 from remotetrade.report import build_daily_report
 from remotetrade.spread import SpreadPaperBroker, best_spread_snapshot, decide_spread, zscore
@@ -426,12 +428,24 @@ def main() -> None:
     parser.add_argument("--spread", action="store_true", help="Run cross-exchange spread mean-reversion paper trading.")
     parser.add_argument("--report", action="store_true", help="Print a daily paper-trading report.")
     parser.add_argument("--health-check", action="store_true", help="Check data freshness and disk health.")
+    parser.add_argument("--collect-poly-rtds", action="store_true", help="Collect public Polymarket RTDS crypto prices.")
+    parser.add_argument("--collect-poly-clob", action="store_true", help="Collect public Polymarket BTC 5m CLOB events.")
     parser.add_argument("--discord", action="store_true", help="Send tick results to DISCORD_WEBHOOK_URL.")
     parser.add_argument("--discord-events-only", action="store_true", help="Notify Discord only when a trade event occurs.")
     parser.add_argument("--duration-seconds", type=int, help="Run for this many seconds, then exit.")
     args = parser.parse_args()
 
     settings = Settings.from_env()
+    if args.collect_poly_rtds:
+        collect_crypto_prices(settings.state_path.parent / "polymarket_crypto_prices.jsonl")
+        return
+    if args.collect_poly_clob:
+        collect_btc_5m_market_events(
+            settings.state_path.parent / "polymarket_btc_5m_clob.jsonl",
+            settings.gamma_url,
+            settings.market_query,
+        )
+        return
     deadline = datetime.now(UTC) + timedelta(seconds=args.duration_seconds) if args.duration_seconds else None
     while True:
         try:

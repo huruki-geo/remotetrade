@@ -1,0 +1,17 @@
+[Unit]
+Description=RemoteTrade Polymarket public BTC 5m CLOB collector
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=remotetrade
+Group=remotetrade
+WorkingDirectory=/opt/remotetrade
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/opt/remotetrade/.venv/bin/python -m remotetrade.app --collect-poly-clob
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

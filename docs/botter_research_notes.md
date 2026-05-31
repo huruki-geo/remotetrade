@@ -55,6 +55,163 @@ This repo should prefer small, testable edges over broad prediction.
 - Next useful build: replay reports from saved `orderbook_snapshots*.jsonl` so variants can be compared under the same market sequence.
 - After replay exists, add entry gates for order-book imbalance, spread width, quote age, and last-trade aggressor direction.
 
+## Hourly BTC Reversal Anomaly
+
+Reference: Hoheto, "Bitcoin price time anomaly" (2020-09-14):
+https://note.com/hht/n/nc0caf98477db
+
+- The article reports a short-term reversal after the move around the start of each hour, especially entries around minute 1 through minute 5.
+- The tested rule compares the previous five-minute move, trades in the opposite direction, and exits after roughly 20 to 30 minutes.
+- The source uses 2019-07-01 through 2020-06-30 data and explicitly warns that spread and fees were not deducted from the headline result.
+- The author also states that the simple strategy alone is not enough for a bot because frequent entries are costly and the profit ratio is limited.
+- Treat this as a candidate feature for replay analysis, not as evidence of a risk-free standalone strategy.
+
+Useful replay features:
+
+- UTC minute and hour.
+- Return over the previous 1, 3, and 5 minutes.
+- Return after 5, 10, 20, and 30 minutes.
+- Spread, depth, imbalance, and estimated round-trip fees at signal time.
+- Maker-only fill outcome versus taker fallback outcome.
+- Separate out-of-sample results by month and venue.
+
+## High-Frequency Direction
+
+The current always-on VPS process is a low-frequency REST polling paper trader. It polls every `POLL_SECONDS`, fetches three venue books sequentially, and only places a simulated limit pair when a cross-venue candidate passes the profit guard. It is not an HFT engine yet.
+
+Before live high-frequency execution:
+
+1. Collect WebSocket order-book deltas and trades with exchange timestamps.
+2. Build deterministic replay from recorded market events.
+3. Measure quote age, queue position proxies, partial fills, one-leg exposure, cancel latency, and emergency hedge cost.
+4. Compare maker strategies under fees and adverse selection.
+5. Keep the hourly anomaly as one optional feature in the replay report.
+6. Only add authenticated order placement after the paper and replay results survive out-of-sample checks.
+
+There is no risk-free version of cross-exchange market making. The main risks are one-leg fills, stale quotes, adverse selection, exchange outages, inventory drift, fee changes, and latency.
+
+## Polymarket BTC 5m Direction
+
+Recommended first directional target: Polymarket `BTC Up or Down 5m`.
+
+- Each market resolves `Up` when the Chainlink BTC/USD price at the end of its five-minute window is greater than or equal to the opening reference price. Otherwise it resolves `Down`.
+- The resolution source is Chainlink BTC/USD, not Coinbase spot. Coinbase can remain a secondary feature, but the next collector should subscribe to Polymarket RTDS Chainlink updates.
+- Polymarket exposes a public CLOB WebSocket market channel for `book`, `price_change`, `last_trade_price`, and optional `best_bid_ask` events.
+- Polymarket RTDS exposes live Binance and Chainlink crypto price updates without authentication.
+- Current Polymarket crypto markets have zero maker fees, taker-only dynamic fees, and daily maker rebates funded from a share of taker fees.
+
+Initial operating rule:
+
+- Evaluate every active five-minute window.
+- Do not force a trade in every window. A skipped low-quality window is a valid outcome.
+- Continue paper trading the existing `scalp_fast`, `balanced`, and `strong_only` variants on the VPS.
+- Record the Polymarket odds move and Coinbase proxy now.
+- Add Chainlink distance-to-reference-price, time remaining, CLOB spread, imbalance, trade flow, and quote age before authenticated trading.
+- Prefer post-only maker orders after replay testing. Use taker execution only when its expected edge exceeds the dynamic fee and slippage.
+
+VPS service:
+
+```bash
+python -m remotetrade.app --patterns patterns.json --discord --discord-events-only
+```
+
+This is a five-minute directional paper-trading lane, separate from the cross-exchange paired-order research lane.
+
+## Complex Arbitrage Research
+
+Reference: QASH_NFT, "May profit and how I turned 5,000 yen into 100 million yen with reproducible arbitrage" (2022-05-31):
+https://note.com/qash/n/nf71c08f2a479
+
+Keep the existing wick, spread, and cross-exchange arbitrage lanes. They are useful collectors and may still find profitable events. Do not treat the Polymarket BTC 5m lane as a replacement for them.
+
+The article explains why simple major-exchange spread scanning is rarely enough:
+
+- Obvious cross-exchange spreads are crowded and often disappear below a retail trader's all-in cost.
+- Exchange fees, hedge cost, and execution drift must be included before calling a spread profitable.
+- More interesting edges can exist inside one exchange across multiple quoted pairs, for example `JPY -> BTC -> XRP -> JPY`.
+- Slow-to-close spreads can come from operational constraints such as deposit or withdrawal suspension and low hot-wallet balances.
+- Very short-lived wick opportunities may only be visible in trade history, not in periodic best-bid / best-ask snapshots.
+- DEX routes can make a trade atomic by reverting when final balance is not profitable, but gas cost, contract risk, MEV, bridge risk, and honeypots remain.
+
+Recommended implementation order:
+
+1. Preserve the current wick, spread, and depth-adjusted cross-exchange collectors.
+2. Add a graph-based triangular and multi-hop arbitrage scanner for one venue at a time.
+3. Record trade streams, not only order-book snapshots, so fleeting wick fills can be replayed.
+4. Add venue metadata: fees, minimum sizes, deposit and withdrawal status, wallet constraints, and stale-data checks.
+5. Add DEX route simulation separately. Only consider execution after contract allowlists, token allowlists, gas accounting, and atomic profit guards exist.
+
+Avoid strategies that depend on manipulating liquidity, intentionally increasing gas prices, exploiting other users' collateral through oracle delay, or trading unreviewed tokens.
+
+## Evidence-Based Edge Assessment
+
+The project should target event-driven, medium-frequency execution on a VPS, not a pure latency race.
+
+Evidence:
+
+- Xu, Gould, and Howison, "Multi-Level Order-Flow Imbalance in a Limit Order Book" (2019): deeper order-book flow levels improve out-of-sample fit for contemporaneous mid-price changes.
+- Cont, Cucuringu, and Zhang, "Cross-Impact of Order Flow Imbalance in Equity Markets" (2021): integrated multi-level OFI explains price impact better than best-level OFI, and lagged cross-asset OFI improves short-horizon forecasts.
+- Kolm, Turiel, and Westray, "Deep Order Flow Imbalance" (2021): stationary order-flow inputs outperform raw order-book states for high-frequency return prediction in their data.
+- "Wish or reality? On the exploitability of triangular arbitrage in cryptocurrency markets" (Finance Research Letters, 2025): Binance triangular opportunities exist, but fees, slippage, and limited order-book volume eliminate profitability in the tested strategy.
+
+Implications:
+
+- Do not make simple major-exchange triangular arbitrage the primary expected-profit strategy. Keep the scanner as a discovery and measurement tool.
+- Collect event streams before adding complicated prediction models. Snapshot-only REST polling misses queue changes, fleeting wicks, and cancellations.
+- Start with interpretable features: multi-level OFI, trade aggressor imbalance, spread, depth, quote age, short-window return, volatility, and time remaining.
+- Use conditional entry filters. A strategy that skips most windows can be healthier than one that forces high trade count.
+- Evaluate edge after fees, slippage, missed fills, partial fills, latency, and adverse selection.
+
+## VPS Reality Check
+
+Current state:
+
+- The VPS loop is still REST polling every `POLL_SECONDS`, not high-frequency execution.
+- It can run paper lanes for wick reversal, spread, cross-exchange arbitrage, depth-adjusted arbitrage, limit-fill simulation, and Polymarket BTC 5m directional evaluation.
+- The code does not yet collect exchange trade streams or incremental order-book updates.
+- It does not place authenticated live orders.
+
+Realistic VPS target:
+
+- WebSocket collection with exchange timestamps.
+- Event-driven feature updates and decisions on a sub-second to several-second horizon.
+- Small, selective trades where the measured expected edge exceeds all modeled costs.
+- Multiple independent lanes: wick replay, constraint-driven arbitrage discovery, Polymarket public-data research, and order-flow filters.
+
+Not a realistic first target:
+
+- Winning a pure millisecond race on major Binance triangular paths.
+- Continuously quoting tight spreads against colocated professional market makers.
+- Assuming maker rebates alone compensate for adverse selection.
+
+## Polymarket Compliance Boundary
+
+Polymarket documents geographic restrictions for order placement. The public documentation lists the United States as blocked and Japan as frontend-UI restricted. Before any authenticated integration, call:
+
+```text
+GET https://polymarket.com/api/geoblock
+```
+
+Do not use VPS location changes to bypass restrictions. Until eligibility is confirmed, use Polymarket only for public-data collection, paper trading, and research.
+
+## Validation Plan
+
+Phase 1: observe before optimizing.
+
+1. Collect WebSocket trades and incremental books from selected liquid venues.
+2. Store raw events with exchange timestamp, receive timestamp, sequence identifiers, and reconnect gaps.
+3. Build replay labels at 1, 3, 5, 15, 30, and 60 seconds.
+4. Measure baseline conditional outcomes for wick, OFI, trade imbalance, spread widening, and route-arbitrage signals.
+
+Phase 2: require evidence.
+
+1. Split replay chronologically into development and untouched out-of-sample periods.
+2. Require positive expected value after conservative fees, latency, and slippage.
+3. Track trade count, hit rate, average edge, worst loss, drawdown, fill rate, and adverse move after fill.
+4. Reject strategies whose profit comes from a few unrepeatable events unless they are explicitly treated as event strategies.
+
+Phase 3: only then consider small live execution on legally eligible venues.
+
 ## Next Implementation Priority
 
 1. Add order book clients for the exchanges. [done]
@@ -65,4 +222,14 @@ This repo should prefer small, testable edges over broad prediction.
    - hedge path for single-leg fills
 4. Add inventory checks. [initial version done]
 5. Add live paper fill tracking for post-only limit pairs. [done]
-6. Add replay reports from saved tick CSVs.
+6. Add replay reports from saved tick CSVs and `orderbook_snapshots*.jsonl`.
+7. Keep the Polymarket BTC 5m directional paper service running on the VPS. [done]
+8. Add Polymarket RTDS collection for Chainlink BTC/USD and Binance BTC/USDT.
+   - Public WebSocket collector and VPS service added. [done]
+9. Add Polymarket CLOB WebSocket collection for BTC 5m order-book and trade events.
+   - Public WebSocket collector and VPS service added. [done]
+10. Add a same-venue triangular and multi-hop arbitrage scanner.
+11. Add trade-stream collection for wick replay.
+12. Add microstructure and hourly-anomaly features to replay reports.
+13. Add multi-level OFI and trade-aggressor features.
+14. Add chronological out-of-sample reports with modeled execution costs.
