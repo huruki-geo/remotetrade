@@ -2,8 +2,7 @@
 Description=Run RemoteTrade Boba OolongSwap versus CEX paper probe every 5 minutes
 
 [Timer]
-OnBootSec=3min
-OnUnitActiveSec=5min
+OnCalendar=*-*-* *:00/5:15
 AccuracySec=10s
 Unit=remotetrade-boba-cex-dex-probe.service
 

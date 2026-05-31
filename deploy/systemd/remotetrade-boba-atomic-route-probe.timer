@@ -2,8 +2,7 @@
 Description=Run RemoteTrade Boba cross-pool atomic route paper probe every 5 minutes
 
 [Timer]
-OnBootSec=390s
-OnUnitActiveSec=5min
+OnCalendar=*-*-* *:03/5:15
 AccuracySec=10s
 Unit=remotetrade-boba-atomic-route-probe.service
 
