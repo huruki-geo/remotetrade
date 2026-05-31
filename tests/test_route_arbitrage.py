@@ -57,6 +57,21 @@ class RouteArbitrageTest(unittest.TestCase):
 
         self.assertEqual(opportunities[0].assets, ("USD", "BTC", "ETH", "SOL", "USD"))
 
+    def test_filters_route_when_top_of_book_quantity_is_too_small(self) -> None:
+        opportunities = find_route_arbitrage(
+            [
+                MarketPair("BTC-JPY", "BTC", "JPY", bid=10_000_000.0, ask=10_010_000.0, ask_qty=0.001),
+                MarketPair("XRP-BTC", "XRP", "BTC", bid=0.000_005, ask=0.000_005_01),
+                MarketPair("XRP-JPY", "XRP", "JPY", bid=51.0, ask=51.1),
+            ],
+            start_asset="JPY",
+            start_amount=100_000.0,
+            fee_bps=10.0,
+            min_net_return_pct=0.001,
+        )
+
+        self.assertEqual(opportunities, [])
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -232,7 +232,7 @@ Applied here:
 - Keep the existing wick, spread, depth-arbitrage, route-arbitrage, and Polymarket lanes independent.
 - Store raw public WebSocket data before optimizing a model.
 - Run hourly replay reports for the Polymarket BTC 5m collector.
-- Treat a `70%` win rate as a validation gate, not a promise. The gate also requires a minimum sample size and positive validation-period PnL.
+- Treat win rate as a reference metric, not a hard gate. Require a minimum sample size and positive validation-period PnL so asymmetric payoff strategies are not rejected solely for winning less often.
 - Keep authenticated execution out of scope until paper validation, venue eligibility, value sanity checks, and small-size operational testing exist.
 
 ## Low-Cost Venue Discovery
@@ -322,3 +322,58 @@ Do not prioritize:
 - Authenticated automatic execution before replay evidence, hard position limits, cancel-all handling, and emergency stop controls exist.
 
 The working hypothesis is narrow: a VPS may support event-driven, selective small-maker experiments, but stable prices do not make the strategy risk-free. Single-leg fills and adverse selection remain the core risks.
+
+## QASH Arbitrage Research Backlog
+
+References:
+
+- QASH_NFT, "5月の損益と再現性のあるアビトラで5000円を1億円にした話":
+  https://note.com/qash/n/nf71c08f2a479
+- QASH, "7/1-7/6の損益とバブル崩壊後の安定戦略":
+  https://qash-tit.hatenablog.com/entry/2021/12/21/195509
+- QASH, "2021年の年次と、今年どうやって稼いだか":
+  https://qash-tit.hatenablog.com/entry/2021/12/30/220812
+- QASH, "11/12までの損益と$OMG戦の思考経過":
+  https://qash-tit.hatenablog.com/entry/2021/12/21/195649
+- QASH_NFT, "2022年の年次と、仮想通貨で今年どうやって稼いだか":
+  https://note.com/qash/n/n4bfdc14c507a
+- QASH, "6月の損益とOasisNetworkで死にかけた話":
+  https://qash-tit.hatenablog.com/entry/2022/06/30/195015
+
+Useful pattern: do not merely scan for a large spread. Explain why competition has not already closed it.
+
+Candidate causes:
+
+1. Same-venue market fragmentation: the same asset trades against multiple quote assets, leaving a profitable conversion route.
+2. Slow price propagation: a quiet venue or stale market maker lags a liquid reference venue during a sharp move.
+3. Operational constraints: deposit or withdrawal suspension, hot-wallet depletion, borrow scarcity, or changing funding and lending rates prevent normal arbitrageurs from closing a spread.
+4. Event structure: snapshots, airdrops, listings, or settlement mechanics temporarily change the fair value of spot, dated futures, perpetuals, or borrow inventory.
+5. DEX fragmentation: stale pools and route-dependent pricing can leave atomic routes, but large spreads must be treated as a warning until token identity, redemption, bridge backing, gas, and contract behavior are verified.
+
+Implementation order for this repository:
+
+1. Connect the existing `route_arbitrage` graph search to bitbank public JPY and BTC pairs.
+   - Start with `JPY -> BTC -> asset -> JPY` and the reverse direction.
+   - Apply current taker fees, minimum order sizes, top-of-book depth, stale-data rejection, and conservative slippage.
+   - Keep it same-venue and paper-only first: no transfer risk and no authenticated API needed.
+2. Add cross-venue divergence persistence tracking.
+   - Record spread onset, peak spread, duration, estimated executable notional, and time to convergence.
+   - Do not alert on a spread alone; alert when a spread survives costs and has an explainable operational constraint.
+3. Add a reference-price wick probe.
+   - Quote small post-only orders on a domestic venue around a liquid overseas reference price.
+   - On a simulated fill, measure immediate hedge cost, single-leg rate, and post-fill markout.
+   - This is distinct from passively quoting the domestic bid and ask.
+4. Add venue-constraint metadata.
+   - Deposit and withdrawal status, hot-wallet observations where public, borrow availability, lending rates, funding rates, and event calendars.
+5. Keep DEX route simulation separate and disabled for execution.
+   - Require token contract allowlists, canonical-asset checks, bridge-backing checks, atomic profit guards, gas accounting, and tiny test transactions before considering live use.
+
+Reject or quarantine an apparent edge when:
+
+- The asset contract differs across venues or chains.
+- A wrapped stablecoin is not canonically issued or redeemable.
+- Withdrawals, deposits, bridges, or borrow inventory are unavailable.
+- The route profit disappears after fees, depth walking, FX hedge costs, funding, borrow interest, or failed-transaction costs.
+- The edge exists only because the quote is stale or the venue is operationally unreliable.
+
+The next low-risk build target is same-venue bitbank triangular route monitoring. It matches the existing graph search, uses public data, and tests the article's highest-signal idea without introducing transfer or bridge risk.

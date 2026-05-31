@@ -34,6 +34,10 @@ install -m 0644 "$APP_DIR/deploy/systemd/remotetrade-poly-replay.service" /etc/s
 install -m 0644 "$APP_DIR/deploy/systemd/remotetrade-poly-replay.timer" /etc/systemd/system/
 install -m 0644 "$APP_DIR/deploy/systemd/remotetrade-venue-discovery.service" /etc/systemd/system/
 install -m 0644 "$APP_DIR/deploy/systemd/remotetrade-venue-discovery.timer" /etc/systemd/system/
+install -m 0644 "$APP_DIR/deploy/systemd/remotetrade-bitbank-route-probe.service" /etc/systemd/system/
+install -m 0644 "$APP_DIR/deploy/systemd/remotetrade-bitbank-route-probe.timer" /etc/systemd/system/
+install -m 0644 "$APP_DIR/deploy/systemd/remotetrade-dex-route-probe.service" /etc/systemd/system/
+install -m 0644 "$APP_DIR/deploy/systemd/remotetrade-dex-route-probe.timer" /etc/systemd/system/
 install -m 0644 "$APP_DIR/deploy/systemd/remotetrade-maker-probe.service" /etc/systemd/system/
 install -m 0644 "$APP_DIR/deploy/systemd/remotetrade-depth-arb.service" /etc/systemd/system/
 install -m 0644 "$APP_DIR/deploy/systemd/remotetrade-depth-arb.timer" /etc/systemd/system/
@@ -52,6 +56,8 @@ systemctl enable remotetrade-poly-rtds.service
 systemctl enable remotetrade-poly-clob.service
 systemctl enable remotetrade-poly-replay.timer
 systemctl enable remotetrade-venue-discovery.timer
+systemctl enable remotetrade-bitbank-route-probe.timer
+systemctl enable remotetrade-dex-route-probe.timer
 systemctl enable remotetrade-maker-probe.service
 systemctl restart "$SERVICE"
 systemctl restart remotetrade-poly-5m.service
@@ -59,6 +65,8 @@ systemctl restart remotetrade-poly-rtds.service
 systemctl restart remotetrade-poly-clob.service
 systemctl restart remotetrade-poly-replay.timer
 systemctl restart remotetrade-venue-discovery.timer
+systemctl restart remotetrade-bitbank-route-probe.timer
+systemctl restart remotetrade-dex-route-probe.timer
 systemctl restart remotetrade-maker-probe.service
 systemctl restart remotetrade-depth-arb.timer
 systemctl restart remotetrade-backup.timer

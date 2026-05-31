@@ -74,6 +74,11 @@ class Settings:
     discovery_min_depth_jpy: float = 10_000.0
     discovery_min_depth_usdt: float = 100.0
     discovery_max_spread_bps: float = 500.0
+    bitbank_route_start_jpy: float = 10_000.0
+    bitbank_route_min_net_return_pct: float = 0.0005
+    dex_rpc_url: str = "https://ethereum-rpc.publicnode.com"
+    dex_route_start_usdc: float = 1_000.0
+    dex_route_min_net_return_pct: float = 0.001
     state_path: Path = Path("data/paper_state.json")
     trades_path: Path = Path("data/trades.csv")
     ticks_path: Path = Path("data/ticks.csv")
@@ -141,6 +146,17 @@ class Settings:
             discovery_min_depth_jpy=env_float("DISCOVERY_MIN_DEPTH_JPY", cls.discovery_min_depth_jpy),
             discovery_min_depth_usdt=env_float("DISCOVERY_MIN_DEPTH_USDT", cls.discovery_min_depth_usdt),
             discovery_max_spread_bps=env_float("DISCOVERY_MAX_SPREAD_BPS", cls.discovery_max_spread_bps),
+            bitbank_route_start_jpy=env_float("BITBANK_ROUTE_START_JPY", cls.bitbank_route_start_jpy),
+            bitbank_route_min_net_return_pct=env_float(
+                "BITBANK_ROUTE_MIN_NET_RETURN_PCT",
+                cls.bitbank_route_min_net_return_pct,
+            ),
+            dex_rpc_url=os.getenv("DEX_RPC_URL", cls.dex_rpc_url),
+            dex_route_start_usdc=env_float("DEX_ROUTE_START_USDC", cls.dex_route_start_usdc),
+            dex_route_min_net_return_pct=env_float(
+                "DEX_ROUTE_MIN_NET_RETURN_PCT",
+                cls.dex_route_min_net_return_pct,
+            ),
             state_path=Path(os.getenv("STATE_PATH", str(cls.state_path))),
             trades_path=Path(os.getenv("TRADES_PATH", str(cls.trades_path))),
             ticks_path=Path(os.getenv("TICKS_PATH", str(cls.ticks_path))),

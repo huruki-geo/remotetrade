@@ -68,6 +68,21 @@ def build_health_report(data_dir: Path, max_tick_age_seconds: int, min_free_disk
             if age > max_tick_age_seconds:
                 issues.append(f"{maker_probe_path.name}: probe is stale ({age:.0f}s ago)")
 
+    for route_probe_path in (
+        data_dir / "bitbank_route_probes.jsonl",
+        data_dir / "dex_route_probes.jsonl",
+    ):
+        if not route_probe_path.exists():
+            continue
+        latest = _latest_jsonl_time(route_probe_path)
+        if latest is None:
+            issues.append(f"{route_probe_path.name}: no readable route probe")
+            continue
+        age = (datetime.now(UTC) - latest).total_seconds()
+        lines.append(f"- {route_probe_path.name}: latest route probe `{latest.isoformat(timespec='seconds')}` / {age:.0f}s ago")
+        if age > max_tick_age_seconds * 2:
+            issues.append(f"{route_probe_path.name}: route probe is stale ({age:.0f}s ago)")
+
     usage = shutil.disk_usage(data_dir if data_dir.exists() else Path("."))
     free_mb = usage.free / 1024 / 1024
     lines.append(f"- 空きディスク: `{free_mb:.0f} MB`")

@@ -10,6 +10,9 @@ class MarketPair:
     quote: str
     bid: float
     ask: float
+    bid_qty: float = float("inf")
+    ask_qty: float = float("inf")
+    fee_bps: float | None = None
 
 
 @dataclass(frozen=True)
@@ -19,6 +22,7 @@ class Conversion:
     to_asset: str
     rate: float
     side: str
+    max_input_amount: float
 
 
 @dataclass(frozen=True)
@@ -73,6 +77,8 @@ def find_route_arbitrage(
         for conversion in graph.get(asset, []):
             if conversion.to_asset in visited_assets and conversion.to_asset != start_asset:
                 continue
+            if amount > conversion.max_input_amount:
+                continue
             walk(
                 conversion.to_asset,
                 amount * conversion.rate,
@@ -89,10 +95,13 @@ def _conversion_graph(pairs: list[MarketPair], fee_multiplier: float) -> dict[st
     for pair in pairs:
         if pair.bid <= 0 or pair.ask <= 0:
             continue
+        pair_fee_multiplier = 1 - pair.fee_bps / 10_000 if pair.fee_bps is not None else fee_multiplier
+        if pair_fee_multiplier <= 0:
+            continue
         graph.setdefault(pair.base, []).append(
-            Conversion(pair.symbol, pair.base, pair.quote, pair.bid * fee_multiplier, "SELL")
+            Conversion(pair.symbol, pair.base, pair.quote, pair.bid * pair_fee_multiplier, "SELL", pair.bid_qty)
         )
         graph.setdefault(pair.quote, []).append(
-            Conversion(pair.symbol, pair.quote, pair.base, fee_multiplier / pair.ask, "BUY")
+            Conversion(pair.symbol, pair.quote, pair.base, pair_fee_multiplier / pair.ask, "BUY", pair.ask * pair.ask_qty)
         )
     return graph

@@ -16,7 +16,9 @@ from remotetrade.arbitrage import (
     scan_limit_arbitrage,
 )
 from remotetrade.clients import Candle, CoinbaseClient, PolymarketClient
+from remotetrade.bitbank_route_probe import append_bitbank_route_probe, format_bitbank_route_probe, scan_bitbank_routes
 from remotetrade.config import Settings
+from remotetrade.dex_route_probe import EthereumRpcClient, append_dex_route_probe, format_dex_route_probe, scan_dex_routes
 from remotetrade.health import build_health_report
 from remotetrade.limit_paper import LimitPaperBroker, adapt_limit_parameters, find_limit_candidate
 from remotetrade.maker_probe import (
@@ -449,6 +451,8 @@ def main() -> None:
     parser.add_argument("--discover-venues", action="store_true", help="Discover low-cost small-maker markets.")
     parser.add_argument("--maker-probe", action="store_true", help="Record maker-market top-of-book observations.")
     parser.add_argument("--maker-probe-report", action="store_true", help="Replay conservative maker-market paper fills.")
+    parser.add_argument("--bitbank-route-probe", action="store_true", help="Record paper-only bitbank triangular routes.")
+    parser.add_argument("--dex-route-probe", action="store_true", help="Record paper-only allowlisted DEX routes.")
     parser.add_argument("--discord", action="store_true", help="Send tick results to DISCORD_WEBHOOK_URL.")
     parser.add_argument("--discord-events-only", action="store_true", help="Notify Discord only when a trade event occurs.")
     parser.add_argument("--duration-seconds", type=int, help="Run for this many seconds, then exit.")
@@ -498,6 +502,29 @@ def main() -> None:
         message = format_maker_probe_reports(build_maker_probe_reports(settings.state_path.parent / "maker_probe_ticks.csv"))
         print(message, flush=True)
         if args.discord:
+            maybe_send_discord(message)
+        return
+    if args.bitbank_route_probe:
+        probe = scan_bitbank_routes(
+            start_amount=settings.bitbank_route_start_jpy,
+            min_net_return_pct=settings.bitbank_route_min_net_return_pct,
+        )
+        append_bitbank_route_probe(settings.state_path.parent / "bitbank_route_probes.jsonl", probe)
+        message = format_bitbank_route_probe(probe)
+        print(message, flush=True)
+        if args.discord and probe.opportunity:
+            maybe_send_discord(message)
+        return
+    if args.dex_route_probe:
+        probe = scan_dex_routes(
+            EthereumRpcClient(settings.dex_rpc_url),
+            start_usdc=settings.dex_route_start_usdc,
+            min_net_return_pct=settings.dex_route_min_net_return_pct,
+        )
+        append_dex_route_probe(settings.state_path.parent / "dex_route_probes.jsonl", probe)
+        message = format_dex_route_probe(probe)
+        print(message, flush=True)
+        if args.discord and probe.opportunity:
             maybe_send_discord(message)
         return
     deadline = datetime.now(UTC) + timedelta(seconds=args.duration_seconds) if args.duration_seconds else None

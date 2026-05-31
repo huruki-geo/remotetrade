@@ -1,0 +1,11 @@
+[Unit]
+Description=Run RemoteTrade allowlisted DEX route paper probe every 5 minutes
+
+[Timer]
+OnBootSec=90s
+OnUnitActiveSec=5min
+AccuracySec=10s
+Unit=remotetrade-dex-route-probe.service
+
+[Install]
+WantedBy=timers.target
