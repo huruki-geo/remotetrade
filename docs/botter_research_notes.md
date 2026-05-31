@@ -90,9 +90,9 @@ Before live high-frequency execution:
 
 There is no risk-free version of cross-exchange market making. The main risks are one-leg fills, stale quotes, adverse selection, exchange outages, inventory drift, fee changes, and latency.
 
-## Polymarket BTC 5m Direction
+## Polymarket BTC 5m External Signal Research
 
-Recommended first directional target: Polymarket `BTC Up or Down 5m`.
+Recommended signal source: public Polymarket `BTC Up or Down 5m` data. Do not place Polymarket orders. Test whether its public probability, order-book, and trade-flow changes lead executable price moves on legally eligible external venues.
 
 - Each market resolves `Up` when the Chainlink BTC/USD price at the end of its five-minute window is greater than or equal to the opening reference price. Otherwise it resolves `Down`.
 - The resolution source is Chainlink BTC/USD, not Coinbase spot. Coinbase can remain a secondary feature, but the next collector should subscribe to Polymarket RTDS Chainlink updates.
@@ -100,14 +100,15 @@ Recommended first directional target: Polymarket `BTC Up or Down 5m`.
 - Polymarket RTDS exposes live Binance and Chainlink crypto price updates without authentication.
 - Current Polymarket crypto markets have zero maker fees, taker-only dynamic fees, and daily maker rebates funded from a share of taker fees.
 
-Initial operating rule:
+Initial research rule:
 
 - Evaluate every active five-minute window.
 - Do not force a trade in every window. A skipped low-quality window is a valid outcome.
-- Continue paper trading the existing `scalp_fast`, `balanced`, and `strong_only` variants on the VPS.
+- Continue paper trading the existing `scalp_fast`, `balanced`, and `strong_only` external-venue proxy variants on the VPS.
 - Record the Polymarket odds move and Coinbase proxy now.
-- Add Chainlink distance-to-reference-price, time remaining, CLOB spread, imbalance, trade flow, and quote age before authenticated trading.
-- Prefer post-only maker orders after replay testing. Use taker execution only when its expected edge exceeds the dynamic fee and slippage.
+- Add Chainlink distance-to-reference-price, time remaining, CLOB spread, imbalance, trade flow, and quote age before external authenticated trading.
+- Label Polymarket feature rows with future executable BTC returns on the target external venue at 1, 3, 5, 15, 30, and 60 seconds.
+- Prefer external-venue post-only maker orders after replay testing. Use taker execution only when its expected edge exceeds fees and slippage.
 
 VPS service:
 
@@ -115,7 +116,7 @@ VPS service:
 python -m remotetrade.app --patterns patterns.json --discord --discord-events-only
 ```
 
-This is a five-minute directional paper-trading lane, separate from the cross-exchange paired-order research lane.
+This is an external-venue directional signal research lane, separate from the cross-exchange paired-order research lane.
 
 ## Complex Arbitrage Research
 
@@ -192,7 +193,7 @@ Polymarket documents geographic restrictions for order placement. The public doc
 GET https://polymarket.com/api/geoblock
 ```
 
-Do not use VPS location changes to bypass restrictions. Until eligibility is confirmed, use Polymarket only for public-data collection, paper trading, and research.
+Use Polymarket only as a public-data source for research. Do not place Polymarket orders or use VPS location changes to bypass restrictions.
 
 ## Validation Plan
 
