@@ -82,6 +82,10 @@ class Settings:
     bsc_rpc_url: str = "https://bsc-dataseed.bnbchain.org"
     bsc_qash_route_start_usdt: float = 1_000.0
     bsc_qash_route_min_net_return_pct: float = 0.001
+    boba_rpc_url: str = "https://mainnet.boba.network"
+    boba_cex_dex_start_usd: float = 10.0
+    boba_cex_dex_min_net_return_pct: float = 0.001
+    boba_oolong_stable_fee_bps: float = 1.0
     state_path: Path = Path("data/paper_state.json")
     trades_path: Path = Path("data/trades.csv")
     ticks_path: Path = Path("data/ticks.csv")
@@ -166,6 +170,13 @@ class Settings:
                 "BSC_QASH_ROUTE_MIN_NET_RETURN_PCT",
                 cls.bsc_qash_route_min_net_return_pct,
             ),
+            boba_rpc_url=os.getenv("BOBA_RPC_URL", cls.boba_rpc_url),
+            boba_cex_dex_start_usd=env_float("BOBA_CEX_DEX_START_USD", cls.boba_cex_dex_start_usd),
+            boba_cex_dex_min_net_return_pct=env_float(
+                "BOBA_CEX_DEX_MIN_NET_RETURN_PCT",
+                cls.boba_cex_dex_min_net_return_pct,
+            ),
+            boba_oolong_stable_fee_bps=env_float("BOBA_OOLONG_STABLE_FEE_BPS", cls.boba_oolong_stable_fee_bps),
             state_path=Path(os.getenv("STATE_PATH", str(cls.state_path))),
             trades_path=Path(os.getenv("TRADES_PATH", str(cls.trades_path))),
             ticks_path=Path(os.getenv("TICKS_PATH", str(cls.ticks_path))),

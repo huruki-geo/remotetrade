@@ -1,0 +1,12 @@
+[Unit]
+Description=RemoteTrade Boba OolongSwap versus CEX paper probe
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=remotetrade
+Group=remotetrade
+WorkingDirectory=/opt/remotetrade
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/opt/remotetrade/.venv/bin/python -m remotetrade.app --boba-cex-dex-probe --discord

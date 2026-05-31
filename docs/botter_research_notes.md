@@ -377,3 +377,24 @@ Reject or quarantine an apparent edge when:
 - The edge exists only because the quote is stale or the venue is operationally unreliable.
 
 The next low-risk build target is same-venue bitbank triangular route monitoring. It matches the existing graph search, uses public data, and tests the article's highest-signal idea without introducing transfer or bridge risk.
+
+## BOBA CEX-DEX Stablecoin Probe
+
+The January 31, 2026 QASH note says an older Curve fork used on BOBA still has a spread. The public article does not name the fork or pool contract. Public project material identifies Zencha Finance as BOBA's first StableSwap using the StableSwap invariant for `DAI / USDC / USDT`, but this is only a candidate until its live contracts are identified.
+
+As an immediately verifiable BOBA CEX-DEX baseline, monitor the canonical OolongSwap `USDT / USDC` pool against Coinbase `USDT-USD`:
+
+- Verify the pool tokens against BOBA's official L2 token list on every scan.
+- Model constant-product price impact at the configured small size.
+- Treat the Oolong stable-pair fee as a configurable assumption. Public Oolong material says stable-pair fees may be lower than the default dynamic fee.
+- Record both directions and retain the better route.
+- Alert only as a research candidate. Bridge latency, bridge fee, CEX inventory, deposit and withdrawal status, and operational reliability remain unmodeled.
+
+Initial May 31, 2026 observations showed a real but tiny-capacity divergence:
+
+- `$1`: approximately `+1.76%`
+- `$5`: approximately `+1.35%`
+- `$10`: approximately `+0.81%`
+- `$20`: approximately `-0.24%`
+
+The pool is shallow enough that price impact consumes the edge quickly. This is closer to the article's point than scanning deep mainnet pools: the reason the spread survives is also the reason it is difficult to monetize at size.

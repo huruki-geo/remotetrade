@@ -48,6 +48,8 @@ install -m 0644 "$APP_DIR/deploy/systemd/remotetrade-dex-route-probe.service" /e
 install -m 0644 "$APP_DIR/deploy/systemd/remotetrade-dex-route-probe.timer" /etc/systemd/system/
 install -m 0644 "$APP_DIR/deploy/systemd/remotetrade-bsc-qash-route-probe.service" /etc/systemd/system/
 install -m 0644 "$APP_DIR/deploy/systemd/remotetrade-bsc-qash-route-probe.timer" /etc/systemd/system/
+install -m 0644 "$APP_DIR/deploy/systemd/remotetrade-boba-cex-dex-probe.service" /etc/systemd/system/
+install -m 0644 "$APP_DIR/deploy/systemd/remotetrade-boba-cex-dex-probe.timer" /etc/systemd/system/
 install -m 0644 "$APP_DIR/deploy/systemd/remotetrade-maker-probe.service" /etc/systemd/system/
 install -m 0644 "$APP_DIR/deploy/systemd/remotetrade-depth-arb.service" /etc/systemd/system/
 install -m 0644 "$APP_DIR/deploy/systemd/remotetrade-depth-arb.timer" /etc/systemd/system/
@@ -72,6 +74,7 @@ systemctl enable --now remotetrade-venue-discovery.timer
 systemctl enable --now remotetrade-bitbank-route-probe.timer
 systemctl enable --now remotetrade-dex-route-probe.timer
 systemctl enable --now remotetrade-bsc-qash-route-probe.timer
+systemctl enable --now remotetrade-boba-cex-dex-probe.timer
 systemctl enable --now remotetrade-maker-probe.service
 systemctl enable --now remotetrade-depth-arb.timer
 systemctl enable --now remotetrade-backup.timer
