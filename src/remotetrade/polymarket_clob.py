@@ -68,7 +68,8 @@ def collect_btc_5m_market_events(
     ping_seconds: float = 10.0,
     refresh_seconds: float = 60.0,
     reconnect_seconds: float = 3.0,
-    price_change_sample_seconds: float = 0.25,
+    price_change_sample_seconds: float = 1.0,
+    book_sample_seconds: float = 5.0,
     stop_after_events: int | None = None,
     connect: Callable[..., Any] | None = None,
 ) -> None:
@@ -79,7 +80,7 @@ def collect_btc_5m_market_events(
 
     client = PolymarketClient(gamma_url)
     written = 0
-    last_price_change_written_at: float | None = None
+    last_sample_written_at: dict[str, float] = {}
     while stop_after_events is None or written < stop_after_events:
         socket = None
         try:
@@ -108,15 +109,20 @@ def collect_btc_5m_market_events(
                     continue
                 for payload in parse_market_messages(message):
                     now = time.monotonic()
-                    if (
-                        payload.get("event_type") == "price_change"
-                        and last_price_change_written_at is not None
-                        and now - last_price_change_written_at < price_change_sample_seconds
+                    event_type = str(payload.get("event_type") or "")
+                    sample_seconds = {
+                        "price_change": price_change_sample_seconds,
+                        "book": book_sample_seconds,
+                    }.get(event_type)
+                    if event_type == "best_bid_ask" or (
+                        sample_seconds is not None
+                        and event_type in last_sample_written_at
+                        and now - last_sample_written_at[event_type] < sample_seconds
                     ):
                         continue
                     append_market_event(output_path, ClobMarketEvent(market.slug, utc_now(), payload))
-                    if payload.get("event_type") == "price_change":
-                        last_price_change_written_at = now
+                    if sample_seconds is not None:
+                        last_sample_written_at[event_type] = now
                     written += 1
                     if stop_after_events is not None and written >= stop_after_events:
                         break
