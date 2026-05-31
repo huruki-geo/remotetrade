@@ -418,3 +418,5 @@ Initial May 31, 2026 direct RPC observations:
 - `USDC -> USDT` pool-only quotes were approximately `+1.84%` at `$1`, `+1.53%` at `$1,000`, and `+0.57%` at `$5,000`.
 
 The frontend is no longer available and DeFiLlama marks the protocol unaudited. This remains a paper-only observation. Token redemption, bridge status, bridge fees, CEX inventory, and withdrawal availability must be checked separately before any test transaction.
+
+The five-minute timer records every quote, but repeated observations of an untouched spread are not repeated profits. Use `python -m remotetrade.app --boba-zencha-report` to count independent episodes. A new episode requires a candidate to disappear and return, or a gap of more than ten minutes. Discord alerts fire on candidate appearance or reappearance rather than every timer tick.

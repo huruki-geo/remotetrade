@@ -58,6 +58,19 @@ class BobaZenchaProbe:
     caveat: str
 
 
+@dataclass(frozen=True)
+class BobaZenchaReport:
+    observation_count: int
+    opportunity_observations: int
+    episode_count: int
+    active: bool
+    first_observed_at: str | None
+    last_observed_at: str | None
+    max_profit_usd: float
+    max_profitable_capacity_usd: float
+    theoretical_episode_profit_usd: float
+
+
 def scan_boba_zencha(
     rpc: EthereumRpcClient,
     min_net_return_pct: float = 0.001,
@@ -115,6 +128,48 @@ def append_boba_zencha_probe(path: Path, probe: BobaZenchaProbe) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("a", encoding="utf-8") as handle:
         handle.write(json.dumps(asdict(probe), separators=(",", ":")) + "\n")
+
+
+def should_notify_boba_zencha(path: Path, probe: BobaZenchaProbe) -> bool:
+    previous = _load_latest_boba_zencha_probe(path)
+    return probe.opportunity and (previous is None or not previous.opportunity)
+
+
+def build_boba_zencha_report(path: Path, max_gap_seconds: int = 600) -> BobaZenchaReport:
+    probes = _load_boba_zencha_probes(path)
+    episodes: list[list[BobaZenchaProbe]] = []
+    active_episode = False
+    for probe in probes:
+        if not probe.opportunity:
+            active_episode = False
+            continue
+        if not active_episode or _seconds_between(episodes[-1][-1], probe) > max_gap_seconds:
+            episodes.append([])
+        episodes[-1].append(probe)
+        active_episode = True
+    return BobaZenchaReport(
+        observation_count=len(probes),
+        opportunity_observations=sum(probe.opportunity for probe in probes),
+        episode_count=len(episodes),
+        active=bool(probes and probes[-1].opportunity),
+        first_observed_at=probes[0].observed_at if probes else None,
+        last_observed_at=probes[-1].observed_at if probes else None,
+        max_profit_usd=max((probe.profit_usd for probe in probes), default=0.0),
+        max_profitable_capacity_usd=max((probe.profitable_capacity_usd for probe in probes), default=0.0),
+        theoretical_episode_profit_usd=sum(max(probe.profit_usd for probe in episode) for episode in episodes),
+    )
+
+
+def format_boba_zencha_report(report: BobaZenchaReport) -> str:
+    state = "active" if report.active else "inactive"
+    return (
+        "[BobaZenchaReport] "
+        f"observations={report.observation_count} candidates={report.opportunity_observations} "
+        f"independent_episodes={report.episode_count} state={state} "
+        f"max_profit=${report.max_profit_usd:.4f} capacity>=${report.max_profitable_capacity_usd:.0f} "
+        f"theoretical_episode_profit=${report.theoretical_episode_profit_usd:.4f} "
+        f"range={report.first_observed_at or 'none'}..{report.last_observed_at or 'none'}"
+    )
 
 
 def format_boba_zencha_probe(probe: BobaZenchaProbe) -> str:
@@ -176,3 +231,36 @@ def _encode(selector: str, *args: int) -> str:
 
 def _decode_address(raw: str) -> str:
     return "0x" + raw[-40:].lower()
+
+
+def _load_boba_zencha_probes(path: Path) -> list[BobaZenchaProbe]:
+    if not path.exists():
+        return []
+    probes = []
+    with path.open(encoding="utf-8") as handle:
+        for line in handle:
+            if not line.strip():
+                continue
+            probes.append(_decode_boba_zencha_probe(line))
+    return probes
+
+
+def _load_latest_boba_zencha_probe(path: Path) -> BobaZenchaProbe | None:
+    if not path.exists():
+        return None
+    latest = None
+    with path.open(encoding="utf-8") as handle:
+        for line in handle:
+            if line.strip():
+                latest = line
+    return _decode_boba_zencha_probe(latest) if latest is not None else None
+
+
+def _decode_boba_zencha_probe(line: str) -> BobaZenchaProbe:
+    payload = json.loads(line)
+    payload["quotes"] = tuple(ZenchaQuote(**quote) for quote in payload["quotes"])
+    return BobaZenchaProbe(**payload)
+
+
+def _seconds_between(left: BobaZenchaProbe, right: BobaZenchaProbe) -> float:
+    return (datetime.fromisoformat(right.observed_at) - datetime.fromisoformat(left.observed_at)).total_seconds()

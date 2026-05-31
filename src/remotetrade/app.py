@@ -19,7 +19,14 @@ from remotetrade.clients import Candle, CoinbaseClient, PolymarketClient
 from remotetrade.bitbank_route_probe import append_bitbank_route_probe, format_bitbank_route_probe, scan_bitbank_routes
 from remotetrade.bsc_qash_route_probe import append_bsc_qash_route_probe, format_bsc_qash_route_probe, scan_bsc_qash_route
 from remotetrade.boba_cex_dex_probe import append_boba_cex_dex_probe, format_boba_cex_dex_probe, scan_boba_cex_dex
-from remotetrade.boba_zencha_probe import append_boba_zencha_probe, format_boba_zencha_probe, scan_boba_zencha
+from remotetrade.boba_zencha_probe import (
+    append_boba_zencha_probe,
+    build_boba_zencha_report,
+    format_boba_zencha_probe,
+    format_boba_zencha_report,
+    scan_boba_zencha,
+    should_notify_boba_zencha,
+)
 from remotetrade.config import Settings
 from remotetrade.dex_route_probe import EthereumRpcClient, append_dex_route_probe, format_dex_route_probe, scan_dex_routes
 from remotetrade.health import build_health_report
@@ -459,6 +466,7 @@ def main() -> None:
     parser.add_argument("--bsc-qash-route-probe", action="store_true", help="Record the paper-only qash-style PancakeSwap route.")
     parser.add_argument("--boba-cex-dex-probe", action="store_true", help="Record paper-only OolongSwap versus CEX stablecoin divergence.")
     parser.add_argument("--boba-zencha-probe", action="store_true", help="Record paper-only Zencha StableSwap versus CEX divergence.")
+    parser.add_argument("--boba-zencha-report", action="store_true", help="Report independent Zencha divergence episodes.")
     parser.add_argument("--discord", action="store_true", help="Send tick results to DISCORD_WEBHOOK_URL.")
     parser.add_argument("--discord-events-only", action="store_true", help="Notify Discord only when a trade event occurs.")
     parser.add_argument("--duration-seconds", type=int, help="Run for this many seconds, then exit.")
@@ -560,16 +568,24 @@ def main() -> None:
             maybe_send_discord(message + "\n" + probe.caveat)
         return
     if args.boba_zencha_probe:
+        path = settings.state_path.parent / "boba_zencha_probes.jsonl"
         probe = scan_boba_zencha(
             EthereumRpcClient(settings.boba_rpc_url),
             min_net_return_pct=settings.boba_zencha_min_net_return_pct,
             coinbase_url=settings.coinbase_url,
         )
-        append_boba_zencha_probe(settings.state_path.parent / "boba_zencha_probes.jsonl", probe)
+        notify = should_notify_boba_zencha(path, probe)
+        append_boba_zencha_probe(path, probe)
         message = format_boba_zencha_probe(probe)
         print(message, flush=True)
-        if args.discord and probe.opportunity:
+        if args.discord and notify:
             maybe_send_discord(message + "\n" + probe.caveat)
+        return
+    if args.boba_zencha_report:
+        message = format_boba_zencha_report(build_boba_zencha_report(settings.state_path.parent / "boba_zencha_probes.jsonl"))
+        print(message, flush=True)
+        if args.discord:
+            maybe_send_discord(message)
         return
     deadline = datetime.now(UTC) + timedelta(seconds=args.duration_seconds) if args.duration_seconds else None
     while True:
