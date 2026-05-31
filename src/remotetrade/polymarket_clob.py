@@ -68,6 +68,7 @@ def collect_btc_5m_market_events(
     ping_seconds: float = 10.0,
     refresh_seconds: float = 60.0,
     reconnect_seconds: float = 3.0,
+    price_change_sample_seconds: float = 0.25,
     stop_after_events: int | None = None,
     connect: Callable[..., Any] | None = None,
 ) -> None:
@@ -78,6 +79,7 @@ def collect_btc_5m_market_events(
 
     client = PolymarketClient(gamma_url)
     written = 0
+    last_price_change_written_at: float | None = None
     while stop_after_events is None or written < stop_after_events:
         socket = None
         try:
@@ -105,7 +107,16 @@ def collect_btc_5m_market_events(
                 if not isinstance(message, str):
                     continue
                 for payload in parse_market_messages(message):
+                    now = time.monotonic()
+                    if (
+                        payload.get("event_type") == "price_change"
+                        and last_price_change_written_at is not None
+                        and now - last_price_change_written_at < price_change_sample_seconds
+                    ):
+                        continue
                     append_market_event(output_path, ClobMarketEvent(market.slug, utc_now(), payload))
+                    if payload.get("event_type") == "price_change":
+                        last_price_change_written_at = now
                     written += 1
                     if stop_after_events is not None and written >= stop_after_events:
                         break

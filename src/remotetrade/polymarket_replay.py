@@ -5,6 +5,7 @@ from bisect import bisect_right
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
 from pathlib import Path
+from collections.abc import Iterator
 from typing import Any
 
 
@@ -272,10 +273,9 @@ def _feature_from_book(
     )
 
 
-def _jsonl_rows(path: Path) -> list[dict[str, Any]]:
+def _jsonl_rows(path: Path) -> Iterator[dict[str, Any]]:
     if not path.exists():
-        return []
-    rows = []
+        return
     with path.open(encoding="utf-8") as handle:
         for line in handle:
             try:
@@ -283,8 +283,7 @@ def _jsonl_rows(path: Path) -> list[dict[str, Any]]:
             except json.JSONDecodeError:
                 continue
             if isinstance(payload, dict):
-                rows.append(payload)
-    return rows
+                yield payload
 
 
 def _levels_by_price(raw_levels: Any) -> dict[float, float]:
