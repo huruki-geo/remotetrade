@@ -5,6 +5,7 @@ Description=Run RemoteTrade allowlisted DEX route paper probe every 5 minutes
 OnBootSec=90s
 OnUnitActiveSec=5min
 AccuracySec=10s
+RandomizedDelaySec=45s
 Unit=remotetrade-dex-route-probe.service
 
 [Install]
