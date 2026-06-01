@@ -30,6 +30,7 @@ journalctl -u remotetrade-poly-5m.service -f
 journalctl -u remotetrade-poly-rtds.service -f
 journalctl -u remotetrade-poly-clob.service -f
 journalctl -u remotetrade-bitbank-poly-maker.service -f
+journalctl -u remotetrade-coincheck-poly-maker.service -f
 journalctl -u remotetrade-poly-replay.service -n 50 --no-pager
 journalctl -u remotetrade-venue-discovery.service -n 50 --no-pager
 journalctl -u remotetrade-limit-paper.service -f
@@ -75,6 +76,24 @@ python -m remotetrade.app --bitbank-poly-maker-paper
 ```
 
 Paper events are appended to `data/bitbank_poly_maker_events.csv`.
+
+The primary Coincheck paper lane reuses `patterns.json`, subscribes to Coincheck public WebSocket
+BTC/JPY order-book and trade updates, and only treats a post-only paper order as filled when an
+opposing taker trade reaches its price:
+
+```bash
+python -m remotetrade.app --coincheck-poly-maker-paper --patterns patterns.json
+```
+
+Paper events are appended to `data/coincheck_poly_maker_events.csv`. Leave
+`COINCHECK_POLY_MAKER_JST_HOURS` empty while exploring, then freeze a JST-hour allowlist before a
+validation run. `COINCHECK_POLY_MAKER_ALLOWED_SIDES` can independently constrain `LONG` and `SHORT`.
+
+Report all patterns by LONG/SHORT and JST entry hour:
+
+```bash
+python -m remotetrade.app --coincheck-poly-maker-report --hourly
+```
 
 The Polymarket signal live-canary checklist is documented in
 `docs/polymarket-live-readiness.md`. The next manual review is scheduled for **2026-06-15 JST**.

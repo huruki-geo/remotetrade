@@ -36,6 +36,7 @@ install -m 0644 "$APP_DIR/deploy/systemd/remotetrade-venue-discovery.timer" /etc
 install -m 0644 "$APP_DIR/deploy/systemd/remotetrade-bitbank-route-probe.service" /etc/systemd/system/
 install -m 0644 "$APP_DIR/deploy/systemd/remotetrade-bitbank-route-probe.timer" /etc/systemd/system/
 install -m 0644 "$APP_DIR/deploy/systemd/remotetrade-bitbank-poly-maker.service" /etc/systemd/system/
+install -m 0644 "$APP_DIR/deploy/systemd/remotetrade-coincheck-poly-maker.service" /etc/systemd/system/
 install -m 0644 "$APP_DIR/deploy/systemd/remotetrade-dex-route-probe.service" /etc/systemd/system/
 install -m 0644 "$APP_DIR/deploy/systemd/remotetrade-dex-route-probe.timer" /etc/systemd/system/
 install -m 0644 "$APP_DIR/deploy/systemd/remotetrade-bsc-qash-route-probe.service" /etc/systemd/system/
@@ -68,6 +69,7 @@ systemctl enable --now remotetrade-poly-replay.timer
 systemctl enable --now remotetrade-venue-discovery.timer
 systemctl enable --now remotetrade-bitbank-route-probe.timer
 systemctl enable --now remotetrade-bitbank-poly-maker.service
+systemctl enable --now remotetrade-coincheck-poly-maker.service
 systemctl enable --now remotetrade-dex-route-probe.timer
 systemctl enable --now remotetrade-bsc-qash-route-probe.timer
 systemctl enable --now remotetrade-boba-cex-dex-probe.timer
@@ -85,6 +87,7 @@ systemctl restart remotetrade-poly-5m.service
 systemctl restart remotetrade-poly-rtds.service
 systemctl restart remotetrade-poly-clob.service
 systemctl restart remotetrade-bitbank-poly-maker.service
+systemctl restart remotetrade-coincheck-poly-maker.service
 systemctl restart remotetrade-maker-probe.service
 
 echo "remotetrade updated to $REMOTE"

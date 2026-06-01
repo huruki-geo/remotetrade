@@ -16,6 +16,8 @@ from remotetrade.arbitrage import (
     scan_limit_arbitrage,
 )
 from remotetrade.clients import Candle, CoinbaseClient, PolymarketClient
+from remotetrade.coincheck_poly_maker import run_coincheck_poly_maker_paper
+from remotetrade.coincheck_poly_maker_analysis import format_maker_summaries, load_maker_events, summarize_maker_events
 from remotetrade.bitbank_route_probe import append_bitbank_route_probe, format_bitbank_route_probe, scan_bitbank_routes
 from remotetrade.bitbank_poly_maker import run_bitbank_poly_maker_paper
 from remotetrade.bsc_qash_route_probe import append_bsc_qash_route_probe, format_bsc_qash_route_probe, scan_bsc_qash_route
@@ -472,6 +474,10 @@ def main() -> None:
     parser.add_argument("--maker-probe-report", action="store_true", help="Replay conservative maker-market paper fills.")
     parser.add_argument("--bitbank-route-probe", action="store_true", help="Record paper-only bitbank triangular routes.")
     parser.add_argument("--bitbank-poly-maker-paper", action="store_true", help="Paper-trade Polymarket-led bitbank maker orders.")
+    parser.add_argument("--coincheck-poly-maker-paper", action="store_true", help="Paper-trade pattern-based Coincheck maker orders.")
+    parser.add_argument("--coincheck-poly-maker-report", action="store_true", help="Report pattern-based Coincheck maker paper results.")
+    parser.add_argument("--hourly", action="store_true", help="Split supported reports by JST entry hour.")
+    parser.add_argument("--min-closed-trades", type=int, default=0, help="Hide report rows below this closed-trade count.")
     parser.add_argument("--dex-route-probe", action="store_true", help="Record paper-only allowlisted DEX routes.")
     parser.add_argument("--bsc-qash-route-probe", action="store_true", help="Record the paper-only qash-style PancakeSwap route.")
     parser.add_argument("--boba-cex-dex-probe", action="store_true", help="Record paper-only OolongSwap versus CEX stablecoin divergence.")
@@ -506,6 +512,32 @@ def main() -> None:
             settings.bitbank_poly_maker_entry_ttl_seconds,
             settings.bitbank_poly_maker_exit_ttl_seconds,
             settings.bitbank_poly_maker_hold_seconds,
+        )
+        return
+    if args.coincheck_poly_maker_paper:
+        run_coincheck_poly_maker_paper(
+            settings.state_path.parent,
+            settings.gamma_url,
+            args.patterns or Path("patterns.json"),
+            settings.coincheck_poly_maker_pair,
+            settings.coincheck_poly_maker_poll_seconds,
+            settings.coincheck_poly_maker_signal_window_seconds,
+            settings.coincheck_poly_maker_entry_ttl_seconds,
+            settings.coincheck_poly_maker_exit_ttl_seconds,
+            settings.coincheck_poly_maker_maker_fee_bps,
+            settings.coincheck_poly_maker_max_stale_seconds,
+            settings.coincheck_poly_maker_allowed_sides,
+            settings.coincheck_poly_maker_jst_hours,
+        )
+        return
+    if args.coincheck_poly_maker_report:
+        events_path = settings.state_path.parent / "coincheck_poly_maker_events.csv"
+        print(
+            format_maker_summaries(
+                summarize_maker_events(load_maker_events(events_path), hourly=args.hourly),
+                min_closed_trades=args.min_closed_trades,
+            ),
+            flush=True,
         )
         return
     if args.poly_replay:

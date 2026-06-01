@@ -1,0 +1,17 @@
+[Unit]
+Description=RemoteTrade Polymarket-led Coincheck maker paper lane
+After=network-online.target remotetrade-poly-clob.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=remotetrade
+Group=remotetrade
+WorkingDirectory=/opt/remotetrade
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/opt/remotetrade/.venv/bin/python -m remotetrade.app --coincheck-poly-maker-paper --patterns patterns.json
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

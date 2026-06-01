@@ -9,7 +9,7 @@ Polymarket lists Japan (`JP`) as a completely restricted location. Do not place 
 
 ## Lane Overview
 
-- Primary: Polymarket-public-signal Coincheck BTC/JPY post-only paper lane. Not implemented yet.
+- Primary: Polymarket-public-signal Coincheck BTC/JPY post-only paper lane. Collection active.
 - Parallel: Polymarket-public-signal bitbank BTC/JPY maker paper lane. Collection active.
 - Research: arbitrage candidate probes. Keep paper-only until each route passes fee, depth, latency, inventory, and venue-eligibility checks.
 
@@ -26,7 +26,7 @@ Polymarket lists Japan (`JP`) as a completely restricted location. Do not place 
 
 ## Polymarket-Led Coincheck BTC/JPY Lane
 
-Status: **not implemented yet**
+Status: **paper collection active**
 
 Coincheck is the preferred execution venue for the next Polymarket-public-signal paper lane because BTC/JPY exchange trading currently has zero maker and taker fees, and the exchange API supports `post_only`.
 
@@ -34,13 +34,26 @@ Fee source: https://coincheck.com/ja/exchange/fee
 
 Before a live canary:
 
-- Run a Coincheck BTC/JPY order-book paper lane using public WebSocket data.
+- Continue the Coincheck BTC/JPY order-book paper lane using public WebSocket data.
 - Simulate realistic fills from the observed book and trades, not Coinbase ticker prices.
 - Collect at least 300 closed paper trades.
 - Require average net PnL of at least `+1.0 bps` per closed trade after spread and fill assumptions.
 - Require results not to depend on a single JST hour for more than half of total profit.
 - Run SHORT only as inventory-backed sell-then-buy-back trading.
 - Start any approved live canary near the venue minimum order size and stop after 50 closed canary trades for review.
+
+Data files:
+
+- `data/coincheck_poly_maker_events.csv`
+- `data/coincheck_poly_maker_scalp_fast_state.json`
+- `data/coincheck_poly_maker_balanced_state.json`
+- `data/coincheck_poly_maker_strong_only_state.json`
+
+Report command:
+
+```bash
+python -m remotetrade.app --coincheck-poly-maker-report --hourly
+```
 
 ## bitbank BTC/JPY Maker Lane
 

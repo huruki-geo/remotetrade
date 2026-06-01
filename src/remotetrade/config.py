@@ -86,6 +86,15 @@ class Settings:
     bitbank_poly_maker_entry_ttl_seconds: float = 3.0
     bitbank_poly_maker_exit_ttl_seconds: float = 3.0
     bitbank_poly_maker_hold_seconds: float = 60.0
+    coincheck_poly_maker_pair: str = "btc_jpy"
+    coincheck_poly_maker_poll_seconds: float = 1.0
+    coincheck_poly_maker_signal_window_seconds: float = 15.0
+    coincheck_poly_maker_entry_ttl_seconds: float = 3.0
+    coincheck_poly_maker_exit_ttl_seconds: float = 3.0
+    coincheck_poly_maker_maker_fee_bps: float = 0.0
+    coincheck_poly_maker_max_stale_seconds: float = 30.0
+    coincheck_poly_maker_allowed_sides: tuple[str, ...] = ("LONG", "SHORT")
+    coincheck_poly_maker_jst_hours: tuple[int, ...] = ()
     dex_rpc_url: str = "https://ethereum-rpc.publicnode.com"
     dex_route_start_usdc: float = 1_000.0
     dex_route_min_net_return_pct: float = 0.001
@@ -206,6 +215,39 @@ class Settings:
                 "BITBANK_POLY_MAKER_HOLD_SECONDS",
                 cls.bitbank_poly_maker_hold_seconds,
             ),
+            coincheck_poly_maker_pair=os.getenv("COINCHECK_POLY_MAKER_PAIR", cls.coincheck_poly_maker_pair),
+            coincheck_poly_maker_poll_seconds=env_float(
+                "COINCHECK_POLY_MAKER_POLL_SECONDS",
+                cls.coincheck_poly_maker_poll_seconds,
+            ),
+            coincheck_poly_maker_signal_window_seconds=env_float(
+                "COINCHECK_POLY_MAKER_SIGNAL_WINDOW_SECONDS",
+                cls.coincheck_poly_maker_signal_window_seconds,
+            ),
+            coincheck_poly_maker_entry_ttl_seconds=env_float(
+                "COINCHECK_POLY_MAKER_ENTRY_TTL_SECONDS",
+                cls.coincheck_poly_maker_entry_ttl_seconds,
+            ),
+            coincheck_poly_maker_exit_ttl_seconds=env_float(
+                "COINCHECK_POLY_MAKER_EXIT_TTL_SECONDS",
+                cls.coincheck_poly_maker_exit_ttl_seconds,
+            ),
+            coincheck_poly_maker_maker_fee_bps=env_float(
+                "COINCHECK_POLY_MAKER_MAKER_FEE_BPS",
+                cls.coincheck_poly_maker_maker_fee_bps,
+            ),
+            coincheck_poly_maker_max_stale_seconds=env_float(
+                "COINCHECK_POLY_MAKER_MAX_STALE_SECONDS",
+                cls.coincheck_poly_maker_max_stale_seconds,
+            ),
+            coincheck_poly_maker_allowed_sides=_env_csv(
+                "COINCHECK_POLY_MAKER_ALLOWED_SIDES",
+                cls.coincheck_poly_maker_allowed_sides,
+            ),
+            coincheck_poly_maker_jst_hours=_env_int_csv(
+                "COINCHECK_POLY_MAKER_JST_HOURS",
+                cls.coincheck_poly_maker_jst_hours,
+            ),
             dex_rpc_url=os.getenv("DEX_RPC_URL", cls.dex_rpc_url),
             dex_route_start_usdc=env_float("DEX_ROUTE_START_USDC", cls.dex_route_start_usdc),
             dex_route_min_net_return_pct=env_float(
@@ -244,3 +286,10 @@ def _env_csv(name: str, default: tuple[str, ...]) -> tuple[str, ...]:
     if value in (None, ""):
         return default
     return tuple(item.strip() for item in value.split(",") if item.strip())
+
+
+def _env_int_csv(name: str, default: tuple[int, ...]) -> tuple[int, ...]:
+    value = os.getenv(name)
+    if value in (None, ""):
+        return default
+    return tuple(int(item.strip()) for item in value.split(",") if item.strip())

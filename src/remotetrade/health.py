@@ -60,6 +60,7 @@ def build_health_report(data_dir: Path, max_tick_age_seconds: int, min_free_disk
     for maker_probe_path in (
         data_dir / "maker_probe_ticks.csv",
         data_dir / "bitbank_poly_maker_events.csv",
+        data_dir / "coincheck_poly_maker_events.csv",
     ):
         if not maker_probe_path.exists():
             continue
