@@ -113,7 +113,7 @@ The venue discovery timer checks low-cost GMO Coin, bitbank, and MEXC research m
 python -m remotetrade.app --discover-venues
 ```
 
-It stores current fees, minimum order notionals, spreads, and top-of-book depth in `data/venue_market_discoveries.jsonl`. MEXC results are research-only until the API account's actual fees and venue eligibility are confirmed.
+It stores current fees, minimum order notionals, spreads, and top-of-book depth in `data/venue_market_discoveries.jsonl`. GMO Coin and MEXC results are public-market research only for this project. The default continuous maker probe focuses on bitbank markets that could become eligible for a later manually approved canary.
 
 The depth arbitrage guard runs every 5 minutes.
 

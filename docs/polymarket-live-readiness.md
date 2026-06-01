@@ -11,7 +11,15 @@ Polymarket lists Japan (`JP`) as a completely restricted location. Do not place 
 
 - Primary: Polymarket-public-signal Coincheck BTC/JPY post-only paper lane. Collection active.
 - Parallel: Polymarket-public-signal bitbank BTC/JPY maker paper lane. Collection active.
+- Excluded from execution comparison: GMO Coin. The account is not available for this project. Public venue-discovery observations may remain enabled for market research.
 - Research: arbitrage candidate probes. Keep paper-only until each route passes fee, depth, latency, inventory, and venue-eligibility checks.
+
+## Collection Window
+
+- Start or restart the Coincheck and bitbank maker-paper services on **2026-06-01 JST**.
+- Keep both lanes collecting through at least **2026-06-15 JST**.
+- Do not tune thresholds during this initial comparison window unless a collector bug invalidates the data.
+- Treat the Coincheck and bitbank outputs as separate experiments. Their fill models are not identical.
 
 ## Shared Requirements
 

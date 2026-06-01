@@ -46,7 +46,6 @@ class MakerProbeReport:
 DEFAULT_TARGETS = (
     MakerProbeTarget("bitbank", "mana_jpy"),
     MakerProbeTarget("bitbank", "omg_jpy"),
-    MakerProbeTarget("gmo_coin", "WILD"),
 )
 
 

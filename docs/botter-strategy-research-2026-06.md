@@ -136,6 +136,7 @@ Track spot-long/perpetual-short funding capture and cross-venue funding divergen
 - Cancel and replace orders when the reference market moves.
 - Model inventory skew, taker hedge fallback, queue position, and adverse selection.
 - Only pursue venues with zero maker fees, maker rebates, or explicit liquidity rewards.
+- Keep GMO Coin in public venue discovery only. The account is not available for this project's execution experiments.
 
 ## Excluded From Japan Operation
 
