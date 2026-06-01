@@ -7,6 +7,12 @@ Use the review to decide whether a small, manually authorized live canary is jus
 
 Polymarket lists Japan (`JP`) as a completely restricted location. Do not place Polymarket orders or bypass the restriction. Polymarket is a public market-data signal source only. Any approved live canary must execute on a venue legally available from Japan.
 
+## Lane Overview
+
+- Primary: Polymarket-public-signal Coincheck BTC/JPY post-only paper lane. Not implemented yet.
+- Parallel: Polymarket-public-signal bitbank BTC/JPY maker paper lane. Collection active.
+- Research: arbitrage candidate probes. Keep paper-only until each route passes fee, depth, latency, inventory, and venue-eligibility checks.
+
 ## Shared Requirements
 
 - Keep each venue lane paper-only until the review.
@@ -18,11 +24,13 @@ Polymarket lists Japan (`JP`) as a completely restricted location. Do not place 
 - Do not use leverage or naked shorts.
 - Require explicit manual approval before any live order is enabled.
 
-## Coincheck BTC/JPY Lane
+## Polymarket-Led Coincheck BTC/JPY Lane
 
 Status: **not implemented yet**
 
-Coincheck is the preferred venue for the next paper lane because BTC/JPY exchange trading currently has zero maker and taker fees, and the exchange API supports `post_only`.
+Coincheck is the preferred execution venue for the next Polymarket-public-signal paper lane because BTC/JPY exchange trading currently has zero maker and taker fees, and the exchange API supports `post_only`.
+
+Fee source: https://coincheck.com/ja/exchange/fee
 
 Before a live canary:
 

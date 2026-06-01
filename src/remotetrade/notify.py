@@ -28,7 +28,17 @@ def send_discord_message(content: str, webhook_url: str | None = None) -> bool:
 def format_discord_tick(title: str, lines: list[str]) -> str:
     ticks = [_summarize_line(line) for line in lines]
     status = _overall_status(ticks)
-    body = [f"**{status} {title}**"]
+    body = [
+        f"**{status} | {title}**",
+        "- フェーズ: `paper-only`",
+        "- 主レーン: `Polymarket公開シグナル活用 Coincheck BTC/JPY post-only 紙トレード (未実装)`",
+        "- 並走レーン: `Polymarket公開シグナル活用 bitbank BTC/JPY maker 紙トレード (収集中)`",
+        "- 探索レーン: `アビトラ候補検証 (paper-only)`",
+        "- Coincheck BTC/JPY取引所手数料: `maker 0 bps / taker 0 bps`",
+        "- 別途評価: `spread / 約定可能性 / 遅延`",
+        "- Polymarket: `公開シグナル参照のみ`",
+        "**今回の観測**",
+    ]
     for tick in ticks:
         body.append(f"- **{tick.title}** `{_ja_status(tick.status)}`")
         body.extend(f"  - {line}" for line in tick.lines)
