@@ -5,6 +5,8 @@ Review date: **2026-06-15 JST**
 Do not enable automatic live trading merely because the review date has arrived.
 Use the review to decide whether a small, manually authorized live canary is justified.
 
+Polymarket lists Japan (`JP`) as a completely restricted location. Do not place Polymarket orders or bypass the restriction. Polymarket is a public market-data signal source only. Any approved live canary must execute on a venue legally available from Japan.
+
 ## Shared Requirements
 
 - Keep each venue lane paper-only until the review.
@@ -61,4 +63,3 @@ On the review date:
 - Prioritize `strong_only`, SHORT results, and JST-hour breakdowns.
 - Treat apparent hourly effects as unproven until the relevant lane has enough realistic fill samples.
 - Use `python -m remotetrade.polymarket_trade_analysis --hourly ...` for the JST-hour report.
-
