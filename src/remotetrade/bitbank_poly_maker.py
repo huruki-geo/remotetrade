@@ -14,6 +14,7 @@ from remotetrade.venue_discovery import BitbankPublicClient
 
 
 _UP_ASSET_IDS: dict[str, str] = {}
+_UNAVAILABLE_MARKET_SLUGS: set[str] = set()
 
 
 @dataclass(frozen=True)
@@ -224,9 +225,12 @@ def latest_polymarket_up_quote(path: Path, gamma_url: str, max_bytes: int = 512_
             continue
         up_asset_id = _UP_ASSET_IDS.get(slug)
         if up_asset_id is None:
+            if slug in _UNAVAILABLE_MARKET_SLUGS:
+                continue
             try:
                 market = client.find_market(slug, "")
             except RuntimeError:
+                _UNAVAILABLE_MARKET_SLUGS.add(slug)
                 continue
             asset_ids = market_asset_ids(market)
             if not asset_ids:
@@ -265,11 +269,15 @@ def run_bitbank_poly_maker_paper(
         hold_seconds,
     )
     last_quote_time = ""
+    next_poll_at = 0.0
     while True:
         try:
+            now = time.monotonic()
+            if now < next_poll_at:
+                time.sleep(next_poll_at - now)
+            next_poll_at = time.monotonic() + poll_seconds
             quote = latest_polymarket_up_quote(data_dir / "polymarket_btc_5m_clob.jsonl", gamma_url)
             if quote is None or quote.time == last_quote_time:
-                time.sleep(poll_seconds)
                 continue
             book = client.get_order_book(pair)
             bid = float(book["bids"][0][0])
@@ -279,7 +287,6 @@ def run_bitbank_poly_maker_paper(
             print(format_maker_paper_event(event), flush=True)
         except Exception as exc:
             print(f"bitbank poly maker reconnecting after error: {exc}", flush=True)
-        time.sleep(poll_seconds)
 
 
 def append_maker_paper_event(path: Path, event: MakerPaperEvent) -> None:

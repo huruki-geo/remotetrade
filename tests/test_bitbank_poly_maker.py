@@ -1,12 +1,21 @@
 from __future__ import annotations
 
 import csv
+import json
 import tempfile
 import unittest
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
-from remotetrade.bitbank_poly_maker import BitbankPolyMakerPaper, PolymarketUpQuote, _up_price
+from unittest.mock import patch
+
+from remotetrade.bitbank_poly_maker import (
+    BitbankPolyMakerPaper,
+    PolymarketUpQuote,
+    _UNAVAILABLE_MARKET_SLUGS,
+    _up_price,
+    latest_polymarket_up_quote,
+)
 
 
 class BitbankPolyMakerPaperTest(unittest.TestCase):
@@ -73,6 +82,29 @@ class BitbankPolyMakerPaperTest(unittest.TestCase):
         }
 
         self.assertAlmostEqual(_up_price(event, "up") or 0.0, 0.605)
+
+    def test_caches_unavailable_polymarket_slug(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "events.jsonl"
+            slug = "btc-updown-5m-closed"
+            path.write_text(
+                json.dumps(
+                    {
+                        "market_slug": slug,
+                        "received_at": "2026-06-01T00:00:00+00:00",
+                        "event": {"event_type": "last_trade_price", "asset_id": "up", "price": "0.50"},
+                    }
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+            _UNAVAILABLE_MARKET_SLUGS.discard(slug)
+
+            with patch("remotetrade.bitbank_poly_maker.PolymarketClient.find_market", side_effect=RuntimeError) as find_market:
+                self.assertIsNone(latest_polymarket_up_quote(path, "https://example.test"))
+                self.assertIsNone(latest_polymarket_up_quote(path, "https://example.test"))
+
+        self.assertEqual(find_market.call_count, 1)
 
 
 def _quote(time: datetime, price: float) -> PolymarketUpQuote:
