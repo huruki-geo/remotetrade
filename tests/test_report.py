@@ -50,6 +50,7 @@ class ReportTest(unittest.TestCase):
             report = build_daily_report(root, now=datetime(2026, 5, 28, 1, tzinfo=UTC))
 
         self.assertIn("**RemoteTrade 日次レポート**", report)
+        self.assertIn("Polymarket実弾判定レビュー: `2026-06-15 JST`", report)
         self.assertIn("指値裁定: tick `1` / 約定 `1` / 実現損益 `1.230000`", report)
         self.assertIn("約定内訳: 両足 `2` / 片足 `1` / 期限切れ `3`", report)
         self.assertIn("板スナップショット: `2` 行", report)

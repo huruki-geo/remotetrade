@@ -76,6 +76,10 @@ python -m remotetrade.app --bitbank-poly-maker-paper
 
 Paper events are appended to `data/bitbank_poly_maker_events.csv`.
 
+The Polymarket signal live-canary checklist is documented in
+`docs/polymarket-live-readiness.md`. The next manual review is scheduled for **2026-06-15 JST**.
+The review date is not permission to enable live trading automatically.
+
 The hourly replay report applies the configured validation gate:
 
 ```bash

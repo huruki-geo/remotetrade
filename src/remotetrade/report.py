@@ -34,6 +34,7 @@ def build_daily_report(data_dir: Path, now: datetime | None = None, hours: int =
 
     lines = [
         "**RemoteTrade 日次レポート**",
+        "- Polymarket実弾判定レビュー: `2026-06-15 JST` / 到達しても自動発注は有効化しない",
         f"- 対象期間: 直近{hours}時間",
         f"- 指値裁定: tick `{limit_ticks.recent_rows}` / 約定 `{limit_trades.recent_rows}` / 実現損益 `{realized}`",
         f"- 約定内訳: 両足 `{both}` / 片足 `{one_leg}` / 期限切れ `{expired}`",
