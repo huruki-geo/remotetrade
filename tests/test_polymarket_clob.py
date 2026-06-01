@@ -41,8 +41,16 @@ class PolymarketClobTest(unittest.TestCase):
 
             append_market_event(path, ClobMarketEvent("m1", "now", {"event_type": "book"}), max_file_bytes=4)
 
-            self.assertEqual(path.with_suffix(".jsonl.previous").read_text(encoding="utf-8"), "old\n")
+            archives = list((path.parent / "archive").glob("events-*.jsonl"))
+            self.assertEqual(len(archives), 1)
+            self.assertEqual(archives[0].read_text(encoding="utf-8"), "old\n")
             self.assertIn('"market_slug":"m1"', path.read_text(encoding="utf-8"))
+
+            append_market_event(path, ClobMarketEvent("m2", "now", {"event_type": "book"}), max_file_bytes=1)
+
+            archives = list((path.parent / "archive").glob("events-*.jsonl"))
+            self.assertEqual(len(archives), 2)
+            self.assertIn('"market_slug":"m2"', path.read_text(encoding="utf-8"))
 
 
 if __name__ == "__main__":

@@ -17,6 +17,7 @@ from remotetrade.arbitrage import (
 )
 from remotetrade.clients import Candle, CoinbaseClient, PolymarketClient
 from remotetrade.bitbank_route_probe import append_bitbank_route_probe, format_bitbank_route_probe, scan_bitbank_routes
+from remotetrade.bitbank_poly_maker import run_bitbank_poly_maker_paper
 from remotetrade.bsc_qash_route_probe import append_bsc_qash_route_probe, format_bsc_qash_route_probe, scan_bsc_qash_route
 from remotetrade.boba_cex_dex_probe import append_boba_cex_dex_probe, format_boba_cex_dex_probe, scan_boba_cex_dex
 from remotetrade.boba_atomic_route_probe import append_boba_atomic_route_probe, format_boba_atomic_route_probe, scan_boba_atomic_routes
@@ -470,6 +471,7 @@ def main() -> None:
     parser.add_argument("--maker-probe", action="store_true", help="Record maker-market top-of-book observations.")
     parser.add_argument("--maker-probe-report", action="store_true", help="Replay conservative maker-market paper fills.")
     parser.add_argument("--bitbank-route-probe", action="store_true", help="Record paper-only bitbank triangular routes.")
+    parser.add_argument("--bitbank-poly-maker-paper", action="store_true", help="Paper-trade Polymarket-led bitbank maker orders.")
     parser.add_argument("--dex-route-probe", action="store_true", help="Record paper-only allowlisted DEX routes.")
     parser.add_argument("--bsc-qash-route-probe", action="store_true", help="Record the paper-only qash-style PancakeSwap route.")
     parser.add_argument("--boba-cex-dex-probe", action="store_true", help="Record paper-only OolongSwap versus CEX stablecoin divergence.")
@@ -491,6 +493,19 @@ def main() -> None:
             settings.state_path.parent / "polymarket_btc_5m_clob.jsonl",
             settings.gamma_url,
             settings.market_query,
+        )
+        return
+    if args.bitbank_poly_maker_paper:
+        run_bitbank_poly_maker_paper(
+            settings.state_path.parent,
+            settings.gamma_url,
+            settings.bitbank_poly_maker_pair,
+            settings.bitbank_poly_maker_poll_seconds,
+            settings.bitbank_poly_maker_signal_window_seconds,
+            settings.bitbank_poly_maker_signal_threshold,
+            settings.bitbank_poly_maker_entry_ttl_seconds,
+            settings.bitbank_poly_maker_exit_ttl_seconds,
+            settings.bitbank_poly_maker_hold_seconds,
         )
         return
     if args.poly_replay:

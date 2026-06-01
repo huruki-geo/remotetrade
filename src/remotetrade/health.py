@@ -57,8 +57,12 @@ def build_health_report(data_dir: Path, max_tick_age_seconds: int, min_free_disk
             if age > max_tick_age_seconds * 2:
                 issues.append(f"{discovery_path.name}: discovery is stale ({age:.0f}s ago)")
 
-    maker_probe_path = data_dir / "maker_probe_ticks.csv"
-    if maker_probe_path.exists():
+    for maker_probe_path in (
+        data_dir / "maker_probe_ticks.csv",
+        data_dir / "bitbank_poly_maker_events.csv",
+    ):
+        if not maker_probe_path.exists():
+            continue
         latest = _latest_tick_time(maker_probe_path)
         if latest is None:
             issues.append(f"{maker_probe_path.name}: no readable probe tick")

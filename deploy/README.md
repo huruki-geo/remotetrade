@@ -29,6 +29,7 @@ systemctl status remotetrade-limit-paper.service
 journalctl -u remotetrade-poly-5m.service -f
 journalctl -u remotetrade-poly-rtds.service -f
 journalctl -u remotetrade-poly-clob.service -f
+journalctl -u remotetrade-bitbank-poly-maker.service -f
 journalctl -u remotetrade-poly-replay.service -n 50 --no-pager
 journalctl -u remotetrade-venue-discovery.service -n 50 --no-pager
 journalctl -u remotetrade-limit-paper.service -f
@@ -65,6 +66,15 @@ python -m remotetrade.app --collect-poly-clob
 ```
 
 Events are appended to `data/polymarket_btc_5m_clob.jsonl`.
+
+The bitbank maker paper lane follows short Polymarket CLOB probability moves and records conservative post-only
+BTC/JPY fill simulations:
+
+```bash
+python -m remotetrade.app --bitbank-poly-maker-paper
+```
+
+Paper events are appended to `data/bitbank_poly_maker_events.csv`.
 
 The hourly replay report applies the configured validation gate:
 

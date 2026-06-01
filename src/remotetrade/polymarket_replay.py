@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from bisect import bisect_right
+from collections import deque
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -22,6 +23,9 @@ class MarketFeature:
     multi_level_imbalance: float
     multi_level_ofi: float
     trade_imbalance: float
+    polymarket_buy_trade_qty: float
+    polymarket_sell_trade_qty: float
+    polymarket_trade_qty: float
     seconds_remaining: float | None
     chainlink_btc_usd: float | None
     binance_btc_usdt: float | None
@@ -165,6 +169,7 @@ def _max_drawdown(candidates: list[ReplayCandidate]) -> float:
 def extract_market_features(
     path: Path,
     levels: int = 5,
+    trade_volume_window_seconds: float = 60.0,
     crypto_prices_path: Path | None = None,
     max_event_bytes: int | None = None,
     max_crypto_price_bytes: int | None = None,
@@ -191,7 +196,9 @@ def extract_market_features(
                 levels_key = "bids" if side == "BUY" else "asks" if side == "SELL" else ""
                 if levels_key:
                     _apply_level(book[levels_key], change.get("price"), change.get("size"))
-                feature = _feature_from_book(market_slug, received_at, asset_id, book, levels, crypto_prices)
+                feature = _feature_from_book(
+                    market_slug, received_at, asset_id, book, levels, trade_volume_window_seconds, crypto_prices
+                )
                 if feature:
                     features.append(feature)
             continue
@@ -208,13 +215,13 @@ def extract_market_features(
             book["last_trade_price"] = _float_or_none(event.get("price"))
             size = _float_or_none(event.get("size")) or 0.0
             side = str(event.get("side") or "").upper()
-            if side == "BUY":
-                book["buy_trade_qty"] += size
-            elif side == "SELL":
-                book["sell_trade_qty"] += size
+            if side in {"BUY", "SELL"} and size > 0:
+                book["trades"].append((_datetime_or_none(received_at), side, size))
         else:
             continue
-        feature = _feature_from_book(market_slug, received_at, asset_id, book, levels, crypto_prices)
+        feature = _feature_from_book(
+            market_slug, received_at, asset_id, book, levels, trade_volume_window_seconds, crypto_prices
+        )
         if feature:
             features.append(feature)
     return features
@@ -278,6 +285,7 @@ def _feature_from_book(
     asset_id: str,
     book: dict[str, Any],
     levels: int,
+    trade_volume_window_seconds: float,
     crypto_prices: dict[str, list[tuple[datetime, float]]],
 ) -> MarketFeature | None:
     bids = sorted(book["bids"].items(), reverse=True)
@@ -299,6 +307,9 @@ def _feature_from_book(
     book["previous_bid_qty"] = bid_qty
     book["previous_ask_qty"] = ask_qty
     event_time = _datetime_or_none(time)
+    _prune_trades(book["trades"], event_time, trade_volume_window_seconds)
+    buy_trade_qty = sum(size for _, side, size in book["trades"] if side == "BUY")
+    sell_trade_qty = sum(size for _, side, size in book["trades"] if side == "SELL")
     chainlink = _latest_price(crypto_prices.get("chainlink:btc/usd", []), event_time)
     binance = _latest_price(crypto_prices.get("binance:btcusdt", []), event_time)
     return MarketFeature(
@@ -312,7 +323,10 @@ def _feature_from_book(
         imbalance=_ratio(best_bid_qty, best_ask_qty),
         multi_level_imbalance=_ratio(bid_qty, ask_qty),
         multi_level_ofi=ofi,
-        trade_imbalance=_ratio(book["buy_trade_qty"], book["sell_trade_qty"]),
+        trade_imbalance=_ratio(buy_trade_qty, sell_trade_qty),
+        polymarket_buy_trade_qty=buy_trade_qty,
+        polymarket_sell_trade_qty=sell_trade_qty,
+        polymarket_trade_qty=buy_trade_qty + sell_trade_qty,
         seconds_remaining=_seconds_remaining(market_slug, event_time),
         chainlink_btc_usd=chainlink,
         binance_btc_usdt=binance,
@@ -379,9 +393,18 @@ def _new_book() -> dict[str, Any]:
         "last_trade_price": None,
         "previous_bid_qty": None,
         "previous_ask_qty": None,
-        "buy_trade_qty": 0.0,
-        "sell_trade_qty": 0.0,
+        "trades": deque(),
     }
+
+
+def _prune_trades(trades: deque[tuple[datetime | None, str, float]], event_time: datetime | None, window_seconds: float) -> None:
+    if event_time is None:
+        return
+    while trades:
+        trade_time = trades[0][0]
+        if trade_time is not None and (event_time - trade_time).total_seconds() <= window_seconds:
+            break
+        trades.popleft()
 
 
 def _crypto_price_index(path: Path | None, max_bytes: int | None = None) -> dict[str, list[tuple[datetime, float]]]:

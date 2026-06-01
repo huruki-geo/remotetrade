@@ -145,6 +145,34 @@ class PolymarketReplayTest(unittest.TestCase):
             features = extract_market_features(path)
 
         self.assertEqual(features[-1].trade_imbalance, 1.0)
+        self.assertEqual(features[-1].polymarket_buy_trade_qty, 12.0)
+        self.assertEqual(features[-1].polymarket_sell_trade_qty, 0.0)
+        self.assertEqual(features[-1].polymarket_trade_qty, 12.0)
+
+    def test_tracks_polymarket_trade_volume_in_rolling_window(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "events.jsonl"
+            path.write_text(
+                "\n".join(
+                    json.dumps(row)
+                    for row in [
+                        _book("m1", "up", "2026-05-31T00:00:00+00:00", 0.50, 0.51, 100, 100),
+                        _trade("m1", "up", "2026-05-31T00:00:01+00:00", "BUY", 12),
+                        _trade("m1", "up", "2026-05-31T00:00:30+00:00", "SELL", 4),
+                        _trade("m1", "up", "2026-05-31T00:01:02+00:00", "BUY", 3),
+                    ]
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+
+            features = extract_market_features(path, trade_volume_window_seconds=60)
+
+        self.assertEqual(features[2].polymarket_trade_qty, 16.0)
+        self.assertEqual(features[-1].polymarket_buy_trade_qty, 3.0)
+        self.assertEqual(features[-1].polymarket_sell_trade_qty, 4.0)
+        self.assertEqual(features[-1].polymarket_trade_qty, 7.0)
+        self.assertAlmostEqual(features[-1].trade_imbalance, -1 / 7)
 
     def test_joins_crypto_prices_and_time_remaining(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -198,6 +226,20 @@ def _book(slug: str, asset_id: str, time: str, bid: float, ask: float, bid_qty: 
             "asset_id": asset_id,
             "bids": [{"price": str(bid), "size": str(bid_qty)}],
             "asks": [{"price": str(ask), "size": str(ask_qty)}],
+        },
+    }
+
+
+def _trade(slug: str, asset_id: str, time: str, side: str, size: float) -> dict:
+    return {
+        "market_slug": slug,
+        "received_at": time,
+        "event": {
+            "event_type": "last_trade_price",
+            "asset_id": asset_id,
+            "side": side,
+            "price": "0.51",
+            "size": str(size),
         },
     }
 

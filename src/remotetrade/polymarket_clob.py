@@ -58,9 +58,11 @@ def parse_market_messages(raw_message: str) -> list[dict[str, Any]]:
 def append_market_event(path: Path, event: ClobMarketEvent, max_file_bytes: int = MAX_CLOB_FILE_BYTES) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     if path.exists() and path.stat().st_size >= max_file_bytes:
-        previous_path = path.with_suffix(f"{path.suffix}.previous")
-        previous_path.unlink(missing_ok=True)
-        path.replace(previous_path)
+        archive_dir = path.parent / "archive"
+        archive_dir.mkdir(parents=True, exist_ok=True)
+        stamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%S%fZ")
+        archive_path = archive_dir / f"{path.stem}-{stamp}{path.suffix}"
+        path.replace(archive_path)
     with path.open("a", encoding="utf-8") as handle:
         handle.write(json.dumps(asdict(event), separators=(",", ":")) + "\n")
 

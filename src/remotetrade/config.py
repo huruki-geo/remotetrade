@@ -79,6 +79,13 @@ class Settings:
     discovery_max_spread_bps: float = 500.0
     bitbank_route_start_jpy: float = 10_000.0
     bitbank_route_min_net_return_pct: float = 0.0005
+    bitbank_poly_maker_pair: str = "btc_jpy"
+    bitbank_poly_maker_poll_seconds: float = 1.0
+    bitbank_poly_maker_signal_window_seconds: float = 10.0
+    bitbank_poly_maker_signal_threshold: float = 0.05
+    bitbank_poly_maker_entry_ttl_seconds: float = 3.0
+    bitbank_poly_maker_exit_ttl_seconds: float = 3.0
+    bitbank_poly_maker_hold_seconds: float = 60.0
     dex_rpc_url: str = "https://ethereum-rpc.publicnode.com"
     dex_route_start_usdc: float = 1_000.0
     dex_route_min_net_return_pct: float = 0.001
@@ -173,6 +180,31 @@ class Settings:
             bitbank_route_min_net_return_pct=env_float(
                 "BITBANK_ROUTE_MIN_NET_RETURN_PCT",
                 cls.bitbank_route_min_net_return_pct,
+            ),
+            bitbank_poly_maker_pair=os.getenv("BITBANK_POLY_MAKER_PAIR", cls.bitbank_poly_maker_pair),
+            bitbank_poly_maker_poll_seconds=env_float(
+                "BITBANK_POLY_MAKER_POLL_SECONDS",
+                cls.bitbank_poly_maker_poll_seconds,
+            ),
+            bitbank_poly_maker_signal_window_seconds=env_float(
+                "BITBANK_POLY_MAKER_SIGNAL_WINDOW_SECONDS",
+                cls.bitbank_poly_maker_signal_window_seconds,
+            ),
+            bitbank_poly_maker_signal_threshold=env_float(
+                "BITBANK_POLY_MAKER_SIGNAL_THRESHOLD",
+                cls.bitbank_poly_maker_signal_threshold,
+            ),
+            bitbank_poly_maker_entry_ttl_seconds=env_float(
+                "BITBANK_POLY_MAKER_ENTRY_TTL_SECONDS",
+                cls.bitbank_poly_maker_entry_ttl_seconds,
+            ),
+            bitbank_poly_maker_exit_ttl_seconds=env_float(
+                "BITBANK_POLY_MAKER_EXIT_TTL_SECONDS",
+                cls.bitbank_poly_maker_exit_ttl_seconds,
+            ),
+            bitbank_poly_maker_hold_seconds=env_float(
+                "BITBANK_POLY_MAKER_HOLD_SECONDS",
+                cls.bitbank_poly_maker_hold_seconds,
             ),
             dex_rpc_url=os.getenv("DEX_RPC_URL", cls.dex_rpc_url),
             dex_route_start_usdc=env_float("DEX_ROUTE_START_USDC", cls.dex_route_start_usdc),
