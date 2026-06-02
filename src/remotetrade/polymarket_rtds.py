@@ -7,6 +7,8 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Callable
 
+from remotetrade.archive import MAX_EVENT_FILE_BYTES, rotate_file
+
 
 RTDS_URL = "wss://ws-live-data.polymarket.com"
 
@@ -70,8 +72,9 @@ def parse_crypto_price_message(raw_message: str, received_at: str | None = None)
         return None
 
 
-def append_crypto_price_event(path: Path, event: CryptoPriceEvent) -> None:
+def append_crypto_price_event(path: Path, event: CryptoPriceEvent, max_file_bytes: int = MAX_EVENT_FILE_BYTES) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
+    rotate_file(path, max_file_bytes)
     with path.open("a", encoding="utf-8") as handle:
         handle.write(json.dumps(asdict(event), separators=(",", ":")) + "\n")
 

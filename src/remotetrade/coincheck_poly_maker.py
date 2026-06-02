@@ -12,6 +12,7 @@ from zoneinfo import ZoneInfo
 import requests
 import websocket
 
+from remotetrade.archive import MAX_EVENT_FILE_BYTES, rotate_file
 from remotetrade.bitbank_poly_maker import PolymarketUpQuote, latest_polymarket_up_quote
 from remotetrade.patterns import Pattern, load_patterns
 
@@ -48,6 +49,7 @@ class MakerPosition:
 @dataclass
 class CoincheckPolyMakerState:
     observations: list[tuple[str, float]] = field(default_factory=list)
+    market_slug: str = ""
     pending_order: MakerOrder | None = None
     position: MakerPosition | None = None
     realized_pnl_bps: float = 0.0
@@ -222,6 +224,13 @@ class CoincheckPolyMakerPaper:
         return paper_event
 
     def _record_observation(self, quote: PolymarketUpQuote, now: datetime) -> float:
+        if quote.market_slug != self.state.market_slug:
+            self.state.market_slug = quote.market_slug
+            self.state.observations = []
+            self.state.previous_signal = 0.0
+            self.state.last_quote_time = ""
+            if self.state.pending_order and self.state.pending_order.purpose == "entry":
+                self.state.pending_order = None
         cutoff = now.timestamp() - self.signal_window_seconds
         observations = [
             (raw_time, price)
@@ -299,6 +308,7 @@ class CoincheckPolyMakerPaper:
         position = payload.get("position")
         return CoincheckPolyMakerState(
             observations=[tuple(row) for row in payload.get("observations") or []],
+            market_slug=str(payload.get("market_slug") or ""),
             pending_order=MakerOrder(**order) if order else None,
             position=MakerPosition(**position) if position else None,
             realized_pnl_bps=float(payload.get("realized_pnl_bps") or 0.0),
@@ -400,6 +410,7 @@ def parse_coincheck_websocket_message(raw_message: str, pair: str) -> tuple[dict
 
 def append_maker_paper_event(path: Path, event: MakerPaperEvent) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
+    rotate_file(path, MAX_EVENT_FILE_BYTES)
     exists = path.exists()
     with path.open("a", newline="", encoding="utf-8") as handle:
         writer = csv.DictWriter(handle, fieldnames=list(MakerPaperEvent.__dataclass_fields__))

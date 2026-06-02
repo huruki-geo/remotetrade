@@ -29,8 +29,14 @@ class MakerSummary:
 
 
 def load_maker_events(path: Path) -> list[dict[str, str]]:
-    with path.open(newline="", encoding="utf-8") as handle:
-        return list(csv.DictReader(handle))
+    paths = sorted((path.parent / "archive").glob(f"{path.stem}-*{path.suffix}")) + [path]
+    events: list[dict[str, str]] = []
+    for event_path in paths:
+        if not event_path.exists():
+            continue
+        with event_path.open(newline="", encoding="utf-8") as handle:
+            events.extend(csv.DictReader(handle))
+    return events
 
 
 def summarize_maker_events(events: list[dict[str, str]], *, hourly: bool) -> list[MakerSummary]:

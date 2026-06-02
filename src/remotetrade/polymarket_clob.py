@@ -9,9 +9,11 @@ from typing import Any, Callable
 
 from remotetrade.clients import PolymarketClient, PredictionMarket
 
+from remotetrade.archive import MAX_EVENT_FILE_BYTES, rotate_file
+
 
 CLOB_MARKET_URL = "wss://ws-subscriptions-clob.polymarket.com/ws/market"
-MAX_CLOB_FILE_BYTES = 64 * 1024 * 1024
+MAX_CLOB_FILE_BYTES = MAX_EVENT_FILE_BYTES
 
 
 @dataclass(frozen=True)
@@ -57,12 +59,7 @@ def parse_market_messages(raw_message: str) -> list[dict[str, Any]]:
 
 def append_market_event(path: Path, event: ClobMarketEvent, max_file_bytes: int = MAX_CLOB_FILE_BYTES) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    if path.exists() and path.stat().st_size >= max_file_bytes:
-        archive_dir = path.parent / "archive"
-        archive_dir.mkdir(parents=True, exist_ok=True)
-        stamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%S%fZ")
-        archive_path = archive_dir / f"{path.stem}-{stamp}{path.suffix}"
-        path.replace(archive_path)
+    rotate_file(path, max_file_bytes)
     with path.open("a", encoding="utf-8") as handle:
         handle.write(json.dumps(asdict(event), separators=(",", ":")) + "\n")
 

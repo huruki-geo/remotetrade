@@ -8,6 +8,8 @@ from typing import Any
 
 import requests
 
+from remotetrade.archive import MAX_EVENT_FILE_BYTES, rotate_file
+
 
 @dataclass(frozen=True)
 class MarketDiscovery:
@@ -321,8 +323,13 @@ def scan_mexc_research_markets(
     return _sort_discoveries(discoveries)
 
 
-def append_market_discoveries(path: Path, discoveries: list[MarketDiscovery]) -> None:
+def append_market_discoveries(
+    path: Path,
+    discoveries: list[MarketDiscovery],
+    max_file_bytes: int = MAX_EVENT_FILE_BYTES,
+) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
+    rotate_file(path, max_file_bytes)
     with path.open("a", encoding="utf-8") as handle:
         for discovery in discoveries:
             handle.write(json.dumps(asdict(discovery), separators=(",", ":")) + "\n")

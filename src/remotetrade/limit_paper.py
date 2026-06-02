@@ -7,6 +7,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from remotetrade.arbitrage import LimitArbitrageOrder, scan_limit_arbitrage
+from remotetrade.archive import MAX_EVENT_FILE_BYTES, rotate_file
 from remotetrade.clients import OrderBook, Quote
 from remotetrade.fill_simulator import LimitFillResult, simulate_limit_pair_fill
 from remotetrade.profit_guard import effective_buy, effective_sell
@@ -173,6 +174,7 @@ class LimitPaperBroker:
 
     def append_snapshots(self, books: list[OrderBook]) -> None:
         self.snapshots_path.parent.mkdir(parents=True, exist_ok=True)
+        rotate_file(self.snapshots_path, MAX_EVENT_FILE_BYTES)
         with self.snapshots_path.open("a", encoding="utf-8") as handle:
             for book in books:
                 payload = {

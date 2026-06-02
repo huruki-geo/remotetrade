@@ -72,6 +72,25 @@ class BitbankPolyMakerPaperTest(unittest.TestCase):
         self.assertIsNone(broker.state.pending_order)
         self.assertIsNone(broker.state.position)
 
+    def test_does_not_trade_price_jump_between_different_markets(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            broker = BitbankPolyMakerPaper(root / "state.json", root / "events.csv")
+            start = datetime(2026, 6, 1, tzinfo=UTC)
+
+            broker.tick(_quote(start, 0.99, "btc-updown-5m-old"), 100, 101, maker_fee_bps=-2, now=start)
+            switched = broker.tick(
+                _quote(start + timedelta(seconds=1), 0.50, "btc-updown-5m-new"),
+                100,
+                101,
+                maker_fee_bps=-2,
+                now=start + timedelta(seconds=1),
+            )
+
+        self.assertEqual(switched.signal, 0.0)
+        self.assertEqual(switched.event, "observed")
+        self.assertIsNone(broker.state.pending_order)
+
     def test_extracts_up_mid_from_price_change(self) -> None:
         event = {
             "event_type": "price_change",
@@ -107,8 +126,8 @@ class BitbankPolyMakerPaperTest(unittest.TestCase):
         self.assertEqual(find_market.call_count, 1)
 
 
-def _quote(time: datetime, price: float) -> PolymarketUpQuote:
-    return PolymarketUpQuote(time.isoformat(), "btc-updown-5m-1", price)
+def _quote(time: datetime, price: float, market_slug: str = "btc-updown-5m-1") -> PolymarketUpQuote:
+    return PolymarketUpQuote(time.isoformat(), market_slug, price)
 
 
 if __name__ == "__main__":

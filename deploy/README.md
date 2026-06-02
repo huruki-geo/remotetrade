@@ -146,3 +146,31 @@ Daily data backups are written to:
 ```text
 /opt/remotetrade/backups/
 ```
+
+Large event files rotate into `data/archive/` at 64 MiB. The daily backup captures those immutable
+segments and then removes large JSONL generations from the VPS. Smaller maker-paper CSV generations
+remain available for multi-day reports. By default, compressed local backups are kept for two days.
+
+To upload daily compressed backups as GitHub Release assets, copy `.archive.env.example` to
+`/opt/remotetrade/.archive.env` and set a fine-grained token that has `Contents: write` access to the
+archive repository:
+
+```env
+GITHUB_ARCHIVE_REPOSITORY=huruki-geo/remotetrade-data-archive
+GITHUB_ARCHIVE_TOKEN=github_pat_...
+LOCAL_BACKUP_RETENTION_DAYS=2
+```
+
+Keep the archive repository private. Release assets are used instead of Git commits so raw logs do
+not inflate the source repository history. When a GitHub upload succeeds, the VPS removes its local
+compressed copy.
+
+If a maker-paper collector bug invalidates the comparison window, preserve the old CSV and state
+files and restart only the affected maker lanes:
+
+```bash
+cd /opt/remotetrade
+bash deploy/reset-maker-paper-window.sh
+```
+
+Invalidated files are moved under `data/invalidated/` for audit and inclusion in the next backup.

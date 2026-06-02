@@ -8,6 +8,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from remotetrade.archive import MAX_EVENT_FILE_BYTES, rotate_file
 from remotetrade.clients import PolymarketClient
 from remotetrade.polymarket_clob import market_asset_ids
 from remotetrade.venue_discovery import BitbankPublicClient
@@ -44,6 +45,7 @@ class MakerPosition:
 @dataclass
 class BitbankPolyMakerState:
     observations: list[tuple[str, float]] = field(default_factory=list)
+    market_slug: str = ""
     pending_order: MakerOrder | None = None
     position: MakerPosition | None = None
     realized_pnl_bps: float = 0.0
@@ -155,6 +157,12 @@ class BitbankPolyMakerPaper:
         return paper_event
 
     def _record_observation(self, quote: PolymarketUpQuote, now: datetime) -> float:
+        if quote.market_slug != self.state.market_slug:
+            self.state.market_slug = quote.market_slug
+            self.state.observations = []
+            self.state.previous_signal = 0.0
+            if self.state.pending_order and self.state.pending_order.purpose == "entry":
+                self.state.pending_order = None
         cutoff = now.timestamp() - self.signal_window_seconds
         observations = [
             (raw_time, price)
@@ -201,6 +209,7 @@ class BitbankPolyMakerPaper:
         position = payload.get("position")
         return BitbankPolyMakerState(
             observations=[tuple(row) for row in payload.get("observations") or []],
+            market_slug=str(payload.get("market_slug") or ""),
             pending_order=MakerOrder(**order) if order else None,
             position=MakerPosition(**position) if position else None,
             realized_pnl_bps=float(payload.get("realized_pnl_bps") or 0.0),
@@ -291,6 +300,7 @@ def run_bitbank_poly_maker_paper(
 
 def append_maker_paper_event(path: Path, event: MakerPaperEvent) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
+    rotate_file(path, MAX_EVENT_FILE_BYTES)
     exists = path.exists()
     with path.open("a", newline="", encoding="utf-8") as handle:
         writer = csv.DictWriter(handle, fieldnames=list(MakerPaperEvent.__dataclass_fields__))

@@ -93,6 +93,25 @@ class CoincheckPolyMakerPaperTest(unittest.TestCase):
         self.assertEqual(blocked.event, "observed")
         self.assertIsNone(broker.state.pending_order)
 
+    def test_does_not_trade_price_jump_between_different_markets(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            broker = CoincheckPolyMakerPaper(_pattern(), root / "state.json", root / "events.csv")
+            start = datetime(2026, 6, 1, tzinfo=UTC)
+
+            broker.tick(_quote(start, 0.99, "btc-updown-5m-old"), 100, 101, [], now=start)
+            switched = broker.tick(
+                _quote(start + timedelta(seconds=1), 0.50, "btc-updown-5m-new"),
+                100,
+                101,
+                [],
+                now=start + timedelta(seconds=1),
+            )
+
+        self.assertEqual(switched.signal, 0.0)
+        self.assertEqual(switched.event, "observed")
+        self.assertIsNone(broker.state.pending_order)
+
     def test_parses_and_applies_coincheck_websocket_updates(self) -> None:
         book = CoincheckOrderBook({"bids": [[100, "1"]], "asks": [[102, "1"]]})
         update, trades = parse_coincheck_websocket_message(
@@ -118,8 +137,8 @@ def _pattern(hold_seconds: int = 60) -> Pattern:
     return Pattern("scalp_fast", "Scalp Fast", 0.05, 0.09, 0.02, -0.02, hold_seconds, 0.1, 30)
 
 
-def _quote(time: datetime, price: float) -> PolymarketUpQuote:
-    return PolymarketUpQuote(time.isoformat(), "btc-updown-5m-1", price)
+def _quote(time: datetime, price: float, market_slug: str = "btc-updown-5m-1") -> PolymarketUpQuote:
+    return PolymarketUpQuote(time.isoformat(), market_slug, price)
 
 
 def _trade(time: datetime, side: str, price: float) -> CoincheckTrade:

@@ -1,11 +1,33 @@
 from __future__ import annotations
 
+import csv
+import tempfile
 import unittest
+from pathlib import Path
 
-from remotetrade.coincheck_poly_maker_analysis import format_maker_summaries, summarize_maker_events
+from remotetrade.coincheck_poly_maker_analysis import format_maker_summaries, load_maker_events, summarize_maker_events
 
 
 class CoincheckPolyMakerAnalysisTest(unittest.TestCase):
+    def test_loads_rotated_and_current_events(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            archive = root / "archive"
+            archive.mkdir()
+            header = ["pattern_id", "event"]
+            for path, event in (
+                (archive / "events-20260601.csv", "entry_quoted"),
+                (root / "events.csv", "entry_filled"),
+            ):
+                with path.open("w", newline="", encoding="utf-8") as handle:
+                    writer = csv.DictWriter(handle, fieldnames=header)
+                    writer.writeheader()
+                    writer.writerow({"pattern_id": "scalp_fast", "event": event})
+
+            events = load_maker_events(root / "events.csv")
+
+        self.assertEqual([event["event"] for event in events], ["entry_quoted", "entry_filled"])
+
     def test_summarizes_fill_rate_net_pnl_drawdown_and_losing_streak(self) -> None:
         events = [
             _event("entry_quoted", "BUY", "", "", "0"),

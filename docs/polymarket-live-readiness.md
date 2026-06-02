@@ -2,6 +2,11 @@
 
 Review date: **2026-06-15 JST**
 
+The initial **2026-06-01 JST** maker-paper window is invalidated: the collector compared probability
+prices across separate five-minute Polymarket markets during market transitions. Restart both maker
+lanes with the fixed collector and require a fresh 14-calendar-day comparison window before review.
+Preserve the invalidated CSV and state files for audit; do not mix them into the replacement window.
+
 Do not enable automatic live trading merely because the review date has arrived.
 Use the review to decide whether a small, manually authorized live canary is justified.
 
@@ -17,7 +22,7 @@ Polymarket lists Japan (`JP`) as a completely restricted location. Do not place 
 ## Collection Window
 
 - Start or restart the Coincheck and bitbank maker-paper services on **2026-06-01 JST**.
-- Keep both lanes collecting through at least **2026-06-15 JST**.
+- Keep both lanes collecting for at least 14 calendar days after the fixed collector restart.
 - Do not tune thresholds during this initial comparison window unless a collector bug invalidates the data.
 - Treat the Coincheck and bitbank outputs as separate experiments. Their fill models are not identical.
 

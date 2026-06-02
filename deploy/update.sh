@@ -15,6 +15,7 @@ REMOTE="$(git rev-parse "origin/$BRANCH")"
 
 if [ "$LOCAL" = "$REMOTE" ]; then
   echo "remotetrade already up to date: $LOCAL"
+  exit 0
 else
   echo "updating remotetrade: $LOCAL -> $REMOTE"
 
@@ -60,6 +61,9 @@ install -m 0644 "$APP_DIR/deploy/systemd/remotetrade-report.service" /etc/system
 install -m 0644 "$APP_DIR/deploy/systemd/remotetrade-report.timer" /etc/systemd/system/
 install -m 0644 "$APP_DIR/deploy/systemd/remotetrade-update.service" /etc/systemd/system/
 install -m 0644 "$APP_DIR/deploy/systemd/remotetrade-update.timer" /etc/systemd/system/
+chmod +x "$APP_DIR/deploy/backup-data.sh"
+chmod +x "$APP_DIR/deploy/upload-github-release-asset.sh"
+chmod +x "$APP_DIR/deploy/reset-maker-paper-window.sh"
 
 systemctl daemon-reload
 systemctl enable remotetrade-poly-5m.service

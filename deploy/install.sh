@@ -70,6 +70,8 @@ install -m 0644 "$APP_DIR/deploy/systemd/remotetrade-report.timer" /etc/systemd/
 install -m 0644 "$APP_DIR/deploy/systemd/remotetrade-update.service" /etc/systemd/system/
 install -m 0644 "$APP_DIR/deploy/systemd/remotetrade-update.timer" /etc/systemd/system/
 chmod +x "$APP_DIR/deploy/backup-data.sh"
+chmod +x "$APP_DIR/deploy/upload-github-release-asset.sh"
+chmod +x "$APP_DIR/deploy/reset-maker-paper-window.sh"
 chmod +x "$APP_DIR/deploy/update.sh"
 
 systemctl daemon-reload
