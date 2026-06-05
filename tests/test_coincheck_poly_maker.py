@@ -132,6 +132,12 @@ class CoincheckPolyMakerPaperTest(unittest.TestCase):
         self.assertEqual(trades[0].side, "sell")
         self.assertEqual(trades[0].price, 101)
 
+    def test_rejects_crossed_local_order_book(self) -> None:
+        book = CoincheckOrderBook({"bids": [[102, "1"]], "asks": [[101, "1"]]})
+
+        with self.assertRaisesRegex(RuntimeError, "crossed"):
+            book.best_prices()
+
 
 def _pattern(hold_seconds: int = 60) -> Pattern:
     return Pattern("scalp_fast", "Scalp Fast", 0.05, 0.09, 0.02, -0.02, hold_seconds, 0.1, 30)

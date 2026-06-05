@@ -138,6 +138,73 @@ Track spot-long/perpetual-short funding capture and cross-venue funding divergen
 - Only pursue venues with zero maker fees, maker rebates, or explicit liquidity rewards.
 - Keep GMO Coin in public venue discovery only. The account is not available for this project's execution experiments.
 
+### U.S. semiconductor lead-lag ETF filter
+
+Research note from **2026-06-05 JST**: the sector lead-lag idea from the U.S./Japan sector paper may be
+more useful as a risk filter than as a simple buy-and-hold replacement.
+
+Candidate signal:
+
+- Parent: `SMH` previous U.S. session return.
+- Children: `EWT`, `EWY`, `INDA`.
+- Rule: estimate a 252-trading-day rolling correlation between parent close-to-close return and child
+  next-session open-to-close return. Trade the child only when `correlation * parent_return > 0`.
+- Stronger filters by historical positive-signal percentile improved risk metrics in early tests:
+  - `EWT`: positive-signal top 50% looked best.
+  - `EWY`: top 20% to top 30% looked best.
+  - `INDA`: top 30% looked best.
+- Initial hourly Yahoo-data check from 2024-07-01 through 2026-06-04 suggested holding to the U.S.
+  close was better than exiting after the first few hours for `EWT` and `EWY`; `INDA` was similar
+  around six hours to close.
+
+Leveraged small-capital variant:
+
+- `EWY` signal applied to `KORU` and semiconductor signal applied to `SOXL` showed large compounded
+  historical returns in quick tests, but the headline figures assume 100% of the strategy account is
+  deployed on every signal day, no fees, no tax, no slippage, and no execution errors.
+- The leveraged variant did not hit a -100% day in the tested window, but drawdowns remained severe
+  (`SOXL`/`KORU` can still suffer equity-halving drawdowns even under filters).
+- Treat leveraged ETFs as a paper-only research lane until the backtest includes realistic spread,
+  commission, tax drag, order timing, and position-sizing rules.
+- If tested live later, isolate a small strategy sub-account, use only strong-signal days, avoid
+  overnight holds, avoid shorting, and stop after a predefined drawdown or losing streak.
+
+### Polymarket-to-stock closure bridge
+
+Research note from **2026-06-05 JST**: Polymarket's 24-hour odds stream may be useful when ordinary
+stock markets are closed. This is a prediction-market analogue of the sector lead-lag paper:
+
+- Parent: Polymarket odds changes while U.S. stocks are closed.
+- Children: legally accessible U.S. stocks/ETFs affected by the event.
+- First labels: next U.S. session open-to-close returns.
+
+Pilot data:
+
+- Used the public `br-to/polymarket-monitor` article repository logs from the 2026-04/05 live
+  experiment as a tiny seed data set.
+- The article reports a 2026-04-16 through 2026-05-24 live experiment with 20 completed trades,
+  60% win rate, and +$6.72 realized PnL from $63.06 initial capital.
+- Re-labeled its `correlation_log.json` alerts with next-session open-to-close returns.
+- Naive row-level results looked positive, but many rows were duplicate ticker/date/event mappings.
+- After grouping to one trade per date/symbol/category, off-hours directional macro/geopolitical
+  signals were much weaker:
+  - Macro/geopolitical grouped off-hours: 42 rows, +1.48% compounded, 52.4% win rate.
+  - Iran peace grouped off-hours: 14 rows, +4.41%, 57.1% win rate.
+  - Fed cut grouped off-hours: 5 rows, +4.42%, 80.0% win rate.
+- The seed log is too small for a conclusion, but it supports the research direction.
+
+Design notes for a publishable test:
+
+- Separate Polymarket odds changes into U.S. market hours, post-close/pre-open, weekends, and
+  premarket windows.
+- Avoid ambiguous range markets unless the market strike can be converted into a directional signal
+  relative to the current underlying price.
+- Deduplicate to one action per date/symbol/category or use a portfolio-weighted aggregation rule.
+- Compare against obvious public-market leads such as oil, BTC, rates, and sector ETFs so the paper
+  measures Polymarket-specific information rather than generic market beta.
+- Start with event families where the causal mapping is direct: Iran/energy/airlines/defense,
+  crypto-policy/crypto-equities, Taiwan-China/semiconductors, and Fed/rates/financials.
+
 ## Excluded From Japan Operation
 
 ### Polymarket crypto maker rebates and liquidity rewards

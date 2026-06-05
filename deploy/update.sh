@@ -30,6 +30,8 @@ install -m 0644 "$APP_DIR/deploy/systemd/remotetrade-limit-paper.service" /etc/s
 install -m 0644 "$APP_DIR/deploy/systemd/remotetrade-poly-5m.service" /etc/systemd/system/
 install -m 0644 "$APP_DIR/deploy/systemd/remotetrade-poly-rtds.service" /etc/systemd/system/
 install -m 0644 "$APP_DIR/deploy/systemd/remotetrade-poly-clob.service" /etc/systemd/system/
+install -m 0644 "$APP_DIR/deploy/systemd/remotetrade-poly-stock-bridge.service" /etc/systemd/system/
+install -m 0644 "$APP_DIR/deploy/systemd/remotetrade-poly-stock-bridge.timer" /etc/systemd/system/
 install -m 0644 "$APP_DIR/deploy/systemd/remotetrade-poly-replay.service" /etc/systemd/system/
 install -m 0644 "$APP_DIR/deploy/systemd/remotetrade-poly-replay.timer" /etc/systemd/system/
 install -m 0644 "$APP_DIR/deploy/systemd/remotetrade-venue-discovery.service" /etc/systemd/system/
@@ -69,6 +71,7 @@ systemctl daemon-reload
 systemctl enable remotetrade-poly-5m.service
 systemctl enable remotetrade-poly-rtds.service
 systemctl enable remotetrade-poly-clob.service
+systemctl enable --now remotetrade-poly-stock-bridge.timer
 systemctl enable --now remotetrade-poly-replay.timer
 systemctl enable --now remotetrade-venue-discovery.timer
 systemctl enable --now remotetrade-bitbank-route-probe.timer

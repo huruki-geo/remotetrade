@@ -1,0 +1,11 @@
+[Unit]
+Description=Collect Polymarket-to-stock bridge observations every 10 minutes
+
+[Timer]
+OnBootSec=3min
+OnUnitActiveSec=10min
+AccuracySec=15s
+Unit=remotetrade-poly-stock-bridge.service
+
+[Install]
+WantedBy=timers.target

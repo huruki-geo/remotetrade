@@ -1,0 +1,12 @@
+[Unit]
+Description=Collect Polymarket-to-stock bridge observations
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+Group=root
+WorkingDirectory=/opt/remotetrade
+EnvironmentFile=-/opt/remotetrade/.env
+ExecStart=/opt/remotetrade/.venv/bin/python -m remotetrade.app --collect-poly-stock-bridge --stock-patterns /opt/remotetrade/stock_patterns.json

@@ -119,6 +119,13 @@ class CoincheckOrderBook:
         _apply_levels(self.bids, payload.get("bids"))
         _apply_levels(self.asks, payload.get("asks"))
 
+    def best_prices(self) -> tuple[float, float]:
+        bid = self.best_bid
+        ask = self.best_ask
+        if ask <= bid:
+            raise RuntimeError(f"Coincheck local order book is crossed: bid={bid:g} ask={ask:g}")
+        return bid, ask
+
 
 class CoincheckPolyMakerPaper:
     def __init__(
@@ -383,8 +390,9 @@ def run_coincheck_poly_maker_paper(
                 quote = latest_polymarket_up_quote(data_dir / "polymarket_btc_5m_clob.jsonl", gamma_url)
                 if quote is None or _age_seconds(quote.time) > max_stale_seconds:
                     raise RuntimeError("Polymarket CLOB quote is stale or unavailable.")
+                bid, ask = book.best_prices()
                 for broker in brokers:
-                    event = broker.tick(quote, book.best_bid, book.best_ask, trades)
+                    event = broker.tick(quote, bid, ask, trades)
                     print(format_maker_paper_event(event), flush=True)
                 trades = []
         except Exception as exc:

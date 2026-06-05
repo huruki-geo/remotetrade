@@ -49,6 +49,7 @@ from remotetrade.patterns import Pattern, load_patterns
 from remotetrade.polymarket_clob import collect_btc_5m_market_events
 from remotetrade.polymarket_replay import build_replay_report, format_replay_report, write_replay_report
 from remotetrade.polymarket_rtds import collect_crypto_prices
+from remotetrade.polymarket_stock_bridge import collect_stock_bridge_once, format_bridge_observations
 from remotetrade.profit_guard import best_depth_arbitrage
 from remotetrade.report import build_daily_report
 from remotetrade.spread import SpreadPaperBroker, best_spread_snapshot, decide_spread, zscore
@@ -468,6 +469,7 @@ def main() -> None:
     parser.add_argument("--health-check", action="store_true", help="Check data freshness and disk health.")
     parser.add_argument("--collect-poly-rtds", action="store_true", help="Collect public Polymarket RTDS crypto prices.")
     parser.add_argument("--collect-poly-clob", action="store_true", help="Collect public Polymarket BTC 5m CLOB events.")
+    parser.add_argument("--collect-poly-stock-bridge", action="store_true", help="Collect Polymarket-to-stock bridge observations.")
     parser.add_argument("--poly-replay", action="store_true", help="Report Polymarket BTC 5m replay validation.")
     parser.add_argument("--discover-venues", action="store_true", help="Discover low-cost small-maker markets.")
     parser.add_argument("--maker-probe", action="store_true", help="Record maker-market top-of-book observations.")
@@ -500,6 +502,17 @@ def main() -> None:
             settings.gamma_url,
             settings.market_query,
         )
+        return
+    if args.collect_poly_stock_bridge:
+        observations = collect_stock_bridge_once(
+            args.stock_patterns or Path("stock_patterns.json"),
+            settings.state_path.parent / "polymarket_stock_bridge_state.json",
+            settings.state_path.parent / "polymarket_stock_bridge_events.jsonl",
+        )
+        message = format_bridge_observations(observations)
+        print(message, flush=True)
+        if args.discord and any(row.alert for row in observations):
+            maybe_send_discord(message)
         return
     if args.bitbank_poly_maker_paper:
         run_bitbank_poly_maker_paper(
