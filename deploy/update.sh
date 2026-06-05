@@ -15,7 +15,6 @@ REMOTE="$(git rev-parse "origin/$BRANCH")"
 
 if [ "$LOCAL" = "$REMOTE" ]; then
   echo "remotetrade already up to date: $LOCAL"
-  exit 0
 else
   echo "updating remotetrade: $LOCAL -> $REMOTE"
 
